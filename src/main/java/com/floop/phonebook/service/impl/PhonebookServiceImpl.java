@@ -5,6 +5,7 @@ import com.floop.phonebook.dto.PhonebookEntryResponse;
 import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.exception.BadRequestException;
 import com.floop.phonebook.exception.ResourceNotFoundException;
+import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.service.PhonebookService;
 import org.springframework.stereotype.Service;
@@ -18,9 +19,11 @@ import java.util.UUID;
 @Service
 public class PhonebookServiceImpl implements PhonebookService {
 
+    private final PhonebookMapper mapper;
     private final PhonebookRepository repository;
 
-    public PhonebookServiceImpl(PhonebookRepository repository) {
+    public PhonebookServiceImpl(PhonebookMapper mapper, PhonebookRepository repository) {
+        this.mapper = mapper;
         this.repository = repository;
     }
 
@@ -31,28 +34,17 @@ public class PhonebookServiceImpl implements PhonebookService {
         validateStopNotBeforeActivated(request.getActivatedDate(), request.getStopDate());
         validateActiveNumberConstraint(request.getNumber(), request.getActivatedDate(), active, null);
 
-        PhonebookEntry entry = new PhonebookEntry();
-        entry.setName(request.getName());
-        entry.setSurname(request.getSurname());
-        entry.setNationalId(request.getNationalId());
-        entry.setDateOfBirth(request.getDateOfBirth());
-        entry.setFin(request.getFin());
-        entry.setAddress(request.getAddress());
-        entry.setCity(request.getCity());
-        entry.setNumber(request.getNumber());
-        entry.setActivatedDate(request.getActivatedDate());
-        entry.setStopDate(request.getStopDate());
+        PhonebookEntry entry = mapper.toEntity(request);
         entry.setActive(active);
 
         PhonebookEntry saved = repository.save(entry);
-
-        return toResponse(saved);
+        return mapper.toResponse(saved);
     }
 
     @Override
     public PhonebookEntryResponse getById(UUID id) {
         return repository.findById(id)
-                .map(this::toResponse)
+                .map(mapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException(id));
     }
 
@@ -66,21 +58,12 @@ public class PhonebookServiceImpl implements PhonebookService {
         validateStopNotBeforeActivated(request.getActivatedDate(), request.getStopDate());
         validateActiveNumberConstraint(request.getNumber(), request.getActivatedDate(), active, id);
 
-        entry.setName(request.getName());
-        entry.setSurname(request.getSurname());
-        entry.setNationalId(request.getNationalId());
-        entry.setDateOfBirth(request.getDateOfBirth());
-        entry.setFin(request.getFin());
-        entry.setAddress(request.getAddress());
-        entry.setCity(request.getCity());
-        entry.setNumber(request.getNumber());
-        entry.setActivatedDate(request.getActivatedDate());
-        entry.setStopDate(request.getStopDate());
+        mapper.updateEntityFromRequest(request, entry);
         entry.setActive(active);
 
         PhonebookEntry saved = repository.save(entry);
 
-        return toResponse(saved);
+        return mapper.toResponse(saved);
     }
 
     @Override
@@ -133,26 +116,8 @@ public class PhonebookServiceImpl implements PhonebookService {
         }
     }
 
-    private PhonebookEntryResponse toResponse(PhonebookEntry e) {
-        PhonebookEntryResponse response = new PhonebookEntryResponse();
-        response.setId(e.getId());
-        response.setName(e.getName());
-        response.setSurname(e.getSurname());
-        response.setNationalId(e.getNationalId());
-        response.setDateOfBirth(e.getDateOfBirth());
-        response.setFin(e.getFin());
-        response.setAddress(e.getAddress());
-        response.setCity(e.getCity());
-        response.setNumber(e.getNumber());
-        response.setActivatedDate(e.getActivatedDate());
-        response.setStopDate(e.getStopDate());
-        response.setActive(e.isActive());
-        response.setCreatedAt(e.getCreatedAt());
-        response.setUpdatedAt(e.getUpdatedAt());
-        return response;
-    }
 
 
 
-    
+
 }
