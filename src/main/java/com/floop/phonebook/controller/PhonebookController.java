@@ -1,13 +1,16 @@
 package com.floop.phonebook.controller;
 
 
+import com.floop.phonebook.dto.ImportResponse;
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.dto.PhonebookEntryResponse;
+import com.floop.phonebook.service.ImportService;
 import com.floop.phonebook.service.PhonebookService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -16,9 +19,11 @@ import java.util.UUID;
 public class PhonebookController {
 
     private final PhonebookService service;
+    private final ImportService importService;
 
-    public PhonebookController(PhonebookService service) {
+    public PhonebookController(PhonebookService service, ImportService importService) {
         this.service = service;
+        this.importService = importService;
     }
 
     @PostMapping
@@ -43,6 +48,12 @@ public class PhonebookController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<ImportResponse> importFile(@RequestParam("file") MultipartFile file) {
+        ImportResponse response = importService.importFile(file);
+        return ResponseEntity.ok(response);
     }
 
 
