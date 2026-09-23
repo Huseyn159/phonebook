@@ -1,0 +1,49 @@
+package com.floop.phonebook.controller;
+
+
+import com.floop.phonebook.dto.PhonebookEntryRequest;
+import com.floop.phonebook.dto.PhonebookEntryResponse;
+import com.floop.phonebook.service.PhonebookService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/phonebook")
+public class PhonebookController {
+
+    private final PhonebookService service;
+
+    public PhonebookController(PhonebookService service) {
+        this.service = service;
+    }
+
+    @PostMapping
+    public ResponseEntity<PhonebookEntryResponse> create(@Valid @RequestBody PhonebookEntryRequest request) {
+        PhonebookEntryResponse response = service.create(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PhonebookEntryResponse> update(@PathVariable UUID id,
+                                                         @Valid @RequestBody PhonebookEntryRequest request) {
+        PhonebookEntryResponse response = service.update(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PhonebookEntryResponse> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.getById(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+
+}

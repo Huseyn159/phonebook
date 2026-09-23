@@ -1,0 +1,101 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: huseyn
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+  - changeSet:
+      id: 2
+      author: huseyn
+      changes:
+        - createTable:
+            tableName: phonebook_entry
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: surname
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: national_id
+                  type: VARCHAR(50)
+              - column:
+                  name: date_of_birth
+                  type: DATE
+              - column:
+                  name: fin
+                  type: VARCHAR(20)
+              - column:
+                  name: address
+                  type: VARCHAR(255)
+              - column:
+                  name: city
+                  type: VARCHAR(100)
+              - column:
+                  name: number
+                  type: VARCHAR(30)
+              - column:
+                  name: activated_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stop_date
+                  type: DATE
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 3
+      author: huseyn
+      changes:
+        - createIndex:
+            indexName: idx_phonebook_entry_number
+            tableName: phonebook_entry
+            columns:
+              - column:
+                  name: number
+
+  - changeSet:
+      id: 4
+      author: huseyn
+      changes:
+        - sql:
+            sql: |
+              CREATE UNIQUE INDEX uq_phonebook_entry_active_number
+              ON phonebook_entry (number)
+              WHERE active = true AND number IS NOT NULL;
+
+
+
