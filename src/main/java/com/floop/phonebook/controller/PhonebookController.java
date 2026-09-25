@@ -4,9 +4,12 @@ package com.floop.phonebook.controller;
 import com.floop.phonebook.dto.ImportResponse;
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.dto.PhonebookEntryResponse;
+import com.floop.phonebook.dto.SearchRequest;
 import com.floop.phonebook.service.ImportService;
 import com.floop.phonebook.service.PhonebookService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -55,6 +58,15 @@ public class PhonebookController {
         ImportResponse response = importService.importFile(file);
         return ResponseEntity.ok(response);
     }
+
+
+    @PostMapping("/search")
+    public Page<PhonebookEntryResponse> search(
+            @RequestBody SearchRequest searchRequest,
+            Pageable pageable) {
+        return service.search(searchRequest, pageable);
+    }
+
 
 
 }

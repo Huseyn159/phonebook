@@ -2,12 +2,17 @@ package com.floop.phonebook.service.impl;
 
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.dto.PhonebookEntryResponse;
+import com.floop.phonebook.dto.SearchRequest;
 import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.exception.BadRequestException;
 import com.floop.phonebook.exception.ResourceNotFoundException;
 import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
+import com.floop.phonebook.search.PhonebookSpecificationBuilder;
 import com.floop.phonebook.service.PhonebookService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 
@@ -21,11 +26,15 @@ public class PhonebookServiceImpl implements PhonebookService {
 
     private final PhonebookMapper mapper;
     private final PhonebookRepository repository;
+    private final PhonebookSpecificationBuilder specificationBuilder;
 
-    public PhonebookServiceImpl(PhonebookMapper mapper, PhonebookRepository repository) {
+
+    public PhonebookServiceImpl(PhonebookMapper mapper, PhonebookRepository repository, PhonebookSpecificationBuilder specificationBuilder) {
         this.mapper = mapper;
         this.repository = repository;
+        this.specificationBuilder = specificationBuilder;
     }
+
 
     @Override
     public PhonebookEntryResponse create(PhonebookEntryRequest request) {
@@ -64,6 +73,14 @@ public class PhonebookServiceImpl implements PhonebookService {
         PhonebookEntry saved = repository.save(entry);
 
         return mapper.toResponse(saved);
+    }
+
+    @Override
+    public Page<PhonebookEntryResponse> search(SearchRequest searchRequest, Pageable pageable) {
+        Specification<PhonebookEntry> spec = specificationBuilder.buildAll(searchRequest);
+
+        return repository.findAll(spec, pageable)
+                .map(mapper::toResponse);
     }
 
     @Override
