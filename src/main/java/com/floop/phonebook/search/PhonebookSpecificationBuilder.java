@@ -10,9 +10,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Set;
 
 
 @Component
@@ -34,6 +35,10 @@ public class PhonebookSpecificationBuilder {
             Map.entry("updatedat", "updatedAt")
     );
 
+    private static final Set<SearchOperation> RELATIVE_TIME = EnumSet.of(
+            SearchOperation.LAST_MINUTE, SearchOperation.LAST_HOUR, SearchOperation.LAST_DAY,
+            SearchOperation.LAST_WEEK, SearchOperation.LAST_MONTH);
+
     private void validateDateTimeField(String field){
 
         if(!(field.equals("createdAt") || field.equals("updatedAt"))){
@@ -45,6 +50,9 @@ public class PhonebookSpecificationBuilder {
     public Specification<PhonebookEntry> buildAll(SearchRequest searchRequest) {
         Specification<PhonebookEntry> result = Specification.unrestricted();
 
+        if (searchRequest == null || searchRequest.getCriteria() == null) {
+            return result;
+        }
         for (SearchCriteria criteria : searchRequest.getCriteria()) {
             Specification<PhonebookEntry> current = build(criteria);
             result = result.and(current);
@@ -54,14 +62,32 @@ public class PhonebookSpecificationBuilder {
     }
 
     public Specification<PhonebookEntry> build(SearchCriteria criteria) {
-        String field = ALLOWED_FIELDS.get(criteria.getKey().toLowerCase());
 
+
+
+        if (criteria == null) {
+            throw new BadRequestException("Criteria item must not be null");
+        }
+        if (criteria.getKey() == null || criteria.getKey().isBlank()) {
+            throw new BadRequestException("Search key is required");
+        }
+        if (criteria.getOperation() == null) {
+            throw new BadRequestException("Search operation is required");
+        }
+        if (criteria.getValue() == null && !RELATIVE_TIME.contains(criteria.getOperation())) {
+            throw new BadRequestException("Value is required for " + criteria.getOperation());
+        }
+
+        String field = ALLOWED_FIELDS.get(criteria.getKey().toLowerCase());
         if (field == null) {
             throw new BadRequestException("Invalid search field: " + criteria.getKey());
         }
 
-        return ((root, query, cb) -> {
 
+
+
+        return ((root, query, cb) -> {
+            System.out.println(field + " -> " + root.get(field).getJavaType());
             //--------------Case-lerde IS_MEMBER,ANY_OF heleki yoxdur,cunki phonebookda kollesiya tipli sahe yoxdur --------------
 
             switch (criteria.getOperation()) {
@@ -105,6 +131,7 @@ public class PhonebookSpecificationBuilder {
                     if (values.size() != 2) {
                         throw new BadRequestException("Invalid number of values");
                     }
+
                     Comparable startValue = (Comparable) values.get(0);
                     Comparable endValue = (Comparable) values.get(1);
 

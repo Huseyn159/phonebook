@@ -8,6 +8,9 @@ import java.io.FileInputStream;
 import java.time.LocalDate;
 
 public class PoiPlayground {
+
+
+
     private static String capitalize(String value) {
         if (value == null || value.isBlank()) {
             return value;
@@ -35,6 +38,7 @@ public class PoiPlayground {
         }
 
        return cell.getStringCellValue();
+
     }
     private static LocalDate readLocalDate(Row row, int index) {
         Cell cell = row.getCell(index);
@@ -45,6 +49,11 @@ public class PoiPlayground {
     }
 
     public static void main(String[] args) throws Exception {
+
+        System.out.println(LocalDate.parse("2026-01-01"));
+        System.out.println(Integer.parseInt("555"));
+        System.out.println(Boolean.parseBoolean("abc"));
+        LocalDate.parse("abc");
 
         FileInputStream fis = new FileInputStream("phonebook-test-import.xlsx");
         Workbook workbook = WorkbookFactory.create(fis);
