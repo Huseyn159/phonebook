@@ -39,7 +39,7 @@ Qorunan endpoint-lere, Authorization: Bearer <token> basligi ile sorgu gonderili
 Sifreler, BCrypt ile hash olunur, hec vaxt aciq metnde saxlanmir
 Kriteriyali axtaris (Task 3)
 
-Endpoint: POST /api/v1/phonebook/search?page=0&size=20&sort=activatedDate,desc
+Endpoint:  POST /api/v1/phonebook/search?page=0&size=20&sort=activatedDate,desc
 
 Body: { "criteria": [ { "key": "city", "value": "Baku", "operation": "EQUAL" } ] }
 
