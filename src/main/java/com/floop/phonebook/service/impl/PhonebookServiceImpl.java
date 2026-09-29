@@ -1,8 +1,6 @@
 package com.floop.phonebook.service.impl;
 
-import com.floop.phonebook.dto.PhonebookEntryRequest;
-import com.floop.phonebook.dto.PhonebookEntryResponse;
-import com.floop.phonebook.dto.SearchRequest;
+import com.floop.phonebook.dto.*;
 import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.exception.BadRequestException;
 import com.floop.phonebook.exception.ResourceNotFoundException;
@@ -10,23 +8,27 @@ import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.search.PhonebookSpecificationBuilder;
 import com.floop.phonebook.service.PhonebookService;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class PhonebookServiceImpl implements PhonebookService {
@@ -34,13 +36,23 @@ public class PhonebookServiceImpl implements PhonebookService {
     private final PhonebookMapper mapper;
     private final PhonebookRepository phonebookRepository;
     private final PhonebookSpecificationBuilder specificationBuilder;
+    private final Validator validator;
+
+
+    private enum RowOutcome {
+        CREATED, UPDATED
+    }
+
     private static final int MAX_EXPORT_ROWS = 50_000;
 
-    public PhonebookServiceImpl(PhonebookMapper mapper, PhonebookRepository phonebookRepository, PhonebookSpecificationBuilder specificationBuilder) {
+    public PhonebookServiceImpl(PhonebookMapper mapper, PhonebookRepository phonebookRepository, PhonebookSpecificationBuilder specificationBuilder, Validator validator) {
         this.mapper = mapper;
         this.phonebookRepository = phonebookRepository;
         this.specificationBuilder = specificationBuilder;
+        this.validator = validator;
     }
+
+
 
 
     @Override
@@ -121,9 +133,159 @@ public class PhonebookServiceImpl implements PhonebookService {
         phonebookRepository.deleteById(id);
     }
 
+    //---------------------------------------IMPORT METHODS START----------------------------------------
+
+    @Override
+    public ImportResponse importFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("File is empty");
+
+        }
+
+        ImportResponse response = new ImportResponse();
+
+        try(InputStream is = file.getInputStream();
+            Workbook workbook = WorkbookFactory.create(is)){
+
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (Row row : sheet) {
+                if(row.getRowNum() == 0) {
+                    continue;
+                }
+                if (isRowEmpty(row)) {
+                    continue;
+                }
+
+                response.setTotalRows(response.getTotalRows()+1);
+                int excelRowNumber = row.getRowNum()+1;
 
 
-    // -----------EXPORT---------------
+                try{
+                    RowOutcome outcome = processRow(row);
+                    if(outcome == RowOutcome.CREATED) {
+                        response.setCreated(response.getCreated()+1);
+                    }
+                    else {
+                        response.setUpdated(response.getUpdated()+1);
+                    }
+
+
+                } catch (Exception e) {
+                    response.setFailed(response.getFailed() + 1);
+                    response.getErrors().add(new ImportError(excelRowNumber, e.getMessage()));
+                }
+
+
+            }
+
+
+
+        } catch (BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Could not read file: " + e.getMessage());
+        }
+
+
+
+
+
+        return response;
+    }
+
+
+    private RowOutcome processRow(Row row){
+
+
+
+        PhonebookEntryRequest request = buildRequest(row);
+
+
+        Set<ConstraintViolation<PhonebookEntryRequest>> violations = validator.validate(request);
+        if (!violations.isEmpty()) {
+            String message = violations.stream()
+                    .map(v->v.getPropertyPath() + ": " + v.getMessage())
+                    .collect(Collectors.joining("; "));
+
+            throw new BadRequestException(message);
+        }
+
+        Optional<PhonebookEntry> existing = phonebookRepository.findByNumberAndActivatedDate
+                (request.getNumber(), request.getActivatedDate());
+
+        if(existing.isPresent()){
+            update(existing.get().getId(),  request);
+            return RowOutcome.UPDATED;
+        }
+        else {
+            create(request);
+            return RowOutcome.CREATED;
+        }
+
+
+    }
+
+
+
+    private PhonebookEntryRequest buildRequest(Row row) {
+        PhonebookEntryRequest request = new PhonebookEntryRequest();
+        request.setName(capitalize(readString(row, 0)));
+        request.setSurname(capitalize(readString(row, 1)));
+        request.setNationalId(readString(row, 2));
+        request.setDateOfBirth(readLocalDate(row, 3));
+        request.setFin(readString(row, 4));
+        request.setAddress(readString(row, 5));
+        request.setCity(capitalize(readString(row, 6)));
+        request.setNumber(readString(row, 7));
+        request.setActivatedDate(readLocalDate(row, 8));
+        request.setStopDate(readLocalDate(row, 9));
+        return request;
+    }
+
+    private String readString(Row row,int index) {
+        Cell cell = row.getCell(index);
+        if (cell == null) {
+            return null;
+        }
+        return cell.getStringCellValue().trim();
+    }
+
+    private LocalDate readLocalDate(Row row,int index) {
+        Cell cell = row.getCell(index);
+        if (cell == null) {
+            return null;
+        }
+        return cell.getLocalDateTimeCellValue().toLocalDate();
+    }
+
+    private String capitalize(String value) {
+        if (value == null || value.isBlank()) {
+            return value;
+        }
+
+        String[] words = value.trim().split("\\s+");
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < words.length; i++) {
+            String word = words[i];
+            result.append(Character.toUpperCase(word.charAt(0)))
+                    .append(word.substring(1).toLowerCase());
+            if (i < words.length - 1) {
+                result.append(" ");
+            }
+        }
+
+        return result.toString();
+    }
+
+    private boolean isRowEmpty(Row row) {
+        return readString(row, 0) == null && readString(row, 1) == null;
+    }
+
+    //---------------------------------------IMPORT METHODS END------------------------------------------
+
+    // --------------------------------------EXPORT METHODS START----------------------------------------
     private String cellText(Object value) {
         return value == null ? "" : String.valueOf(value);
     }
@@ -171,6 +333,8 @@ public class PhonebookServiceImpl implements PhonebookService {
 
             return workbook;
     }
+
+    //--------------------------EXPORT METHODS ENDS------------------------------------------------
 
 
     private void validateStopNotBeforeActivated(LocalDate activatedDate, LocalDate stopDate) {

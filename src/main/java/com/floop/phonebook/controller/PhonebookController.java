@@ -5,7 +5,6 @@ import com.floop.phonebook.dto.ImportResponse;
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.dto.PhonebookEntryResponse;
 import com.floop.phonebook.dto.SearchRequest;
-import com.floop.phonebook.service.ImportService;
 import com.floop.phonebook.service.PhonebookService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -25,11 +24,11 @@ import java.util.UUID;
 public class PhonebookController {
 
     private final PhonebookService phonebookService;
-    private final ImportService importService;
 
-    public PhonebookController(PhonebookService phonebookService, ImportService importService) {
+
+    public PhonebookController(PhonebookService phonebookService) {
         this.phonebookService = phonebookService;
-        this.importService = importService;
+
     }
 
     @PostMapping
@@ -58,7 +57,7 @@ public class PhonebookController {
 
     @PostMapping("/import")
     public ResponseEntity<ImportResponse> importFile(@RequestParam("file") MultipartFile file) {
-        ImportResponse response = importService.importFile(file);
+        ImportResponse response = phonebookService.importFile(file);
         return ResponseEntity.ok(response);
     }
 
