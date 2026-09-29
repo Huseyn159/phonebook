@@ -47,6 +47,19 @@ public class PhonebookSpecificationBuilder {
         }
     }
 
+    private List<?> toList(Object value) {
+        List<?> list;
+        if (value instanceof List<?> l) {
+            list = l;
+        } else {
+            list = List.of(value);
+        }
+        if (list.isEmpty()) {
+            throw new BadRequestException("At least one value is required");
+        }
+        return list;
+    }
+
     public Specification<PhonebookEntry> buildAll(SearchRequest searchRequest) {
         Specification<PhonebookEntry> result = Specification.unrestricted();
 
@@ -87,7 +100,6 @@ public class PhonebookSpecificationBuilder {
 
 
         return ((root, query, cb) -> {
-            System.out.println(field + " -> " + root.get(field).getJavaType());
             //--------------Case-lerde IS_MEMBER,ANY_OF heleki yoxdur,cunki phonebookda kollesiya tipli sahe yoxdur --------------
 
             switch (criteria.getOperation()) {
@@ -99,7 +111,11 @@ public class PhonebookSpecificationBuilder {
                     return cb.notEqual(root.get(field), criteria.getValue());
 
                 case IN:
-                    return root.get(field).in((List<?>) criteria.getValue());
+                    return root.get(field).in(toList(criteria.getValue()));
+
+                case NOT_IN:
+                    Predicate inPredicate = root.get(field).in(toList(criteria.getValue()));
+                    return cb.not(inPredicate);
 
                 case GREATER_THAN:
                     Comparable minThreshold = (Comparable) criteria.getValue();
@@ -121,9 +137,6 @@ public class PhonebookSpecificationBuilder {
 
                     return cb.lessThanOrEqualTo(root.get(field),maxEzThreshold);
 
-                case NOT_IN:
-                    Predicate inPredicate = root.get(field).in((List<?>) criteria.getValue());
-                    return cb.not(inPredicate);
 
                 case BETWEEN:
                     List<?> values = (List<?>) criteria.getValue();
