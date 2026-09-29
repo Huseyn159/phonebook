@@ -66,6 +66,7 @@ public class ImportServiceImpl implements ImportService {
 
                 response.setTotalRows(response.getTotalRows()+1);
                 int excelRowNumber = row.getRowNum()+1;
+              
 
                 try{
                     RowOutcome outcome = processRow(row);
