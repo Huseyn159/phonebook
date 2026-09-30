@@ -28,6 +28,7 @@ public interface PhonebookService {
 
     ImportResponse importFile(MultipartFile file);
 
+    Page<String> distinctValues(String field, String searchValue, SearchRequest searchRequest, Pageable pageable);
 
 
     void delete(UUID id);

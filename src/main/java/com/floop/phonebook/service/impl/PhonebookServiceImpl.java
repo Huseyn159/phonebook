@@ -8,11 +8,17 @@ import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.search.PhonebookSpecificationBuilder;
 import com.floop.phonebook.service.PhonebookService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,10 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,19 +40,33 @@ public class PhonebookServiceImpl implements PhonebookService {
     private final PhonebookRepository phonebookRepository;
     private final PhonebookSpecificationBuilder specificationBuilder;
     private final Validator validator;
+    private final EntityManager entityManager;
 
 
     private enum RowOutcome {
         CREATED, UPDATED
     }
 
+    private static final Map<String, String> DISTINCT_ALLOWED_FIELDS = Map.ofEntries(
+            Map.entry("name", "name"),
+            Map.entry("surname", "surname"),
+            Map.entry("nationalid", "nationalId"),
+            Map.entry("fin", "fin"),
+            Map.entry("address", "address"),
+            Map.entry("city", "city"),
+            Map.entry("number", "number"),
+            Map.entry("active","active")
+    );
+
     private static final int MAX_EXPORT_ROWS = 50_000;
 
-    public PhonebookServiceImpl(PhonebookMapper mapper, PhonebookRepository phonebookRepository, PhonebookSpecificationBuilder specificationBuilder, Validator validator) {
+    public PhonebookServiceImpl(PhonebookMapper mapper, PhonebookRepository phonebookRepository, Validator validator,
+                                PhonebookSpecificationBuilder specificationBuilder,  EntityManager entityManager) {
         this.mapper = mapper;
         this.phonebookRepository = phonebookRepository;
         this.specificationBuilder = specificationBuilder;
         this.validator = validator;
+        this.entityManager = entityManager;
     }
 
 
@@ -132,6 +149,67 @@ public class PhonebookServiceImpl implements PhonebookService {
         }
         phonebookRepository.deleteById(id);
     }
+
+
+    @Override
+    public Page<String> distinctValues(String field, String searchValue, SearchRequest searchRequest, Pageable pageable) {
+
+        String fieldName = DISTINCT_ALLOWED_FIELDS.get(field.toLowerCase());
+
+        if (fieldName == null) {
+            throw new BadRequestException(String.format("Field %s not found", field));
+        }
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<String> query = cb.createQuery(String.class);
+        Root<PhonebookEntry> root = query.from(PhonebookEntry.class);
+
+        query.select(root.get(fieldName)).distinct(true);
+
+        query.where(buildCombinedPredicate(searchRequest,searchValue,fieldName,root,query,cb));
+
+        List<String> results = entityManager.createQuery(query)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        CriteriaQuery<Long> queryCount = cb.createQuery(Long.class);
+        Root<PhonebookEntry> rootCount = queryCount.from(PhonebookEntry.class);
+
+        queryCount.select(cb.countDistinct(rootCount.get(fieldName)));
+        queryCount.where(buildCombinedPredicate(searchRequest,searchValue,fieldName,rootCount,queryCount,cb));
+        Long total = entityManager.createQuery(queryCount).getSingleResult();
+
+        return new PageImpl<>(results, pageable, total);
+
+
+
+
+
+    }
+
+    private Predicate buildCombinedPredicate(SearchRequest searchRequest, String searchValue, String fieldName,
+                                             Root<PhonebookEntry> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+
+        Specification<PhonebookEntry> spec = specificationBuilder.buildAll(searchRequest);
+        Predicate wherePredicate = spec.toPredicate(root, query, cb);
+        Predicate notNullPredicate = cb.isNotNull(root.get(fieldName));
+
+        if (wherePredicate == null) {
+            wherePredicate = cb.conjunction();
+        }
+        if (searchValue != null && !searchValue.isBlank()) {
+            Predicate searchPredicate = cb.like(root.get(fieldName), "%" + searchValue + "%");
+            return cb.and(wherePredicate, searchPredicate, notNullPredicate);
+        }
+
+
+        return cb.and(wherePredicate, notNullPredicate);
+
+    }
+
+
+
 
     //---------------------------------------IMPORT METHODS START----------------------------------------
 
@@ -285,7 +363,9 @@ public class PhonebookServiceImpl implements PhonebookService {
 
     //---------------------------------------IMPORT METHODS END------------------------------------------
 
-    // --------------------------------------EXPORT METHODS START----------------------------------------
+
+
+    // --------------------------------------EXPORT HELPER METHODS START----------------------------------------
     private String cellText(Object value) {
         return value == null ? "" : String.valueOf(value);
     }
@@ -337,6 +417,9 @@ public class PhonebookServiceImpl implements PhonebookService {
     //--------------------------EXPORT METHODS ENDS------------------------------------------------
 
 
+
+
+    //--------------------------------------HELPER METHODS--------------------------------------------------------------
     private void validateStopNotBeforeActivated(LocalDate activatedDate, LocalDate stopDate) {
         if (stopDate != null && activatedDate != null && stopDate.isBefore(activatedDate)) {
             throw new BadRequestException("stopDate must not be earlier than activatedDate");
@@ -361,7 +444,8 @@ public class PhonebookServiceImpl implements PhonebookService {
                         "You need to set stop date for the data with id " + conflict.get().getId() + " first");
             }
 
-            List<PhonebookEntry> stopped = phonebookRepository.findByNumberAndStopDateIsNotNullOrderByStopDateDesc(number);
+            List<PhonebookEntry> stopped =
+                    phonebookRepository.findByNumberAndStopDateIsNotNullOrderByStopDateDesc(number);
 
             List<PhonebookEntry> otherStopped = stopped.stream()
                     .filter(e -> !e.getId().equals(excludeId))
@@ -372,11 +456,14 @@ public class PhonebookServiceImpl implements PhonebookService {
 
                 if (activatedDate == null || activatedDate.isBefore(lastStopDate)) {
                     throw new BadRequestException(
-                            "activatedDate must not be earlier than the previous stopDate (" + lastStopDate + ") for this number");
+                            "activatedDate must not be earlier than the previous stopDate (" +
+                                    lastStopDate + ") for this number");
                 }
             }
         }
     }
+
+    //----------------------------------HELPER METHODS END--------------------------------------------------------------
 
 
 

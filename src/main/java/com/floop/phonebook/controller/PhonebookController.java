@@ -79,6 +79,15 @@ public class PhonebookController {
                 .body(excelBytes);
     }
 
+    @PostMapping("/fields")
+    public Page<String> distinctValues(
+            @RequestParam String field,
+            @RequestParam(required = false) String searchValue,
+            @RequestBody(required = false) SearchRequest searchRequest,
+            Pageable pageable) {
+        return phonebookService.distinctValues(field, searchValue, searchRequest, pageable);
+    }
+
 
 
 }
