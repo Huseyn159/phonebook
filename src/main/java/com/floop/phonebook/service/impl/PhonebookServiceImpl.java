@@ -164,8 +164,7 @@ public class PhonebookServiceImpl implements PhonebookService {
         CriteriaQuery<String> query = cb.createQuery(String.class);
         Root<PhonebookEntry> root = query.from(PhonebookEntry.class);
 
-        query.select(root.get(fieldName)).distinct(true);
-
+        query.select(root.get(fieldName).as(String.class)).distinct(true);
         query.where(buildCombinedPredicate(searchRequest,searchValue,fieldName,root,query,cb));
 
         List<String> results = entityManager.createQuery(query)
