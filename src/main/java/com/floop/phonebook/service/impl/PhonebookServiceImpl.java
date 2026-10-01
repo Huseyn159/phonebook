@@ -26,6 +26,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,6 +43,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@EnableAsync
 public class PhonebookServiceImpl implements PhonebookService {
 
     private final PhonebookMapper mapper;
@@ -208,31 +210,30 @@ public class PhonebookServiceImpl implements PhonebookService {
 
     //---------------------------------------IMPORT METHODS START----------------------------------------
 
+
     @Override
     public ImportResponse importFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BadRequestException("File is empty");
-
         }
+        try (InputStream is = file.getInputStream()) {
+            return processExcelStream(is);
+        } catch (IOException e) {
+            throw new BadRequestException("Could not read file: " + e.getMessage());
+        }
+    }
 
+    private ImportResponse processExcelStream(InputStream is) {
         ImportResponse response = new ImportResponse();
-
-        try(InputStream is = file.getInputStream();
-            Workbook workbook = WorkbookFactory.create(is)){
-
+        try (Workbook workbook = WorkbookFactory.create(is)){
             Sheet sheet = workbook.getSheetAt(0);
 
             for (Row row : sheet) {
-                if(row.getRowNum() == 0) {
+                if (row.getRowNum() == 0 || isRowEmpty(row)) {
                     continue;
                 }
-                if (isRowEmpty(row)) {
-                    continue;
-                }
-
                 response.setTotalRows(response.getTotalRows()+1);
                 int excelRowNumber = row.getRowNum()+1;
-
 
                 try{
                     RowOutcome outcome = processRow(row);
@@ -251,31 +252,30 @@ public class PhonebookServiceImpl implements PhonebookService {
 
 
             }
-
-
-
-        } catch (BadRequestException e) {
+        }
+        catch (BadRequestException e) {
             throw e;
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new BadRequestException("Could not read file: " + e.getMessage());
         }
 
-
-
-
-
-        return response;
+        return  response;
     }
 
     @Override
     public PhonebookResultSet importAsync(MultipartFile file) throws IOException {
-       String path = saveFileToDisk(file);
+        String path = saveFileToDisk(file);
         PhonebookResultSet resultSet = createInProgressResultSet(path);
 
 
-
-
         return resultSet;
+    }
+
+    public void processImportAsync(UUID resultId,String filePath) {
+
+
+
     }
 
 

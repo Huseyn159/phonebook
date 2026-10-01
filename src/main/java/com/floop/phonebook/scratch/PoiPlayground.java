@@ -128,4 +128,58 @@ public class PoiPlayground {
 //    }
 
 
+// ==================================OLD IMPORT METHOD===================================
+
+    //    @Override
+//    public ImportResponse importFile(MultipartFile file) {
+//        if (file == null || file.isEmpty()) {
+//            throw new BadRequestException("File is empty");
+//
+//        }
+//
+//        ImportResponse response = new ImportResponse();
+//
+//        try(InputStream is = file.getInputStream();
+//            Workbook workbook = WorkbookFactory.create(is)){
+//
+//            Sheet sheet = workbook.getSheetAt(0);
+//
+//            for (Row row : sheet) {
+//                if(row.getRowNum() == 0) {
+//                    continue;
+//                }
+//                if (isRowEmpty(row)) {
+//                    continue;
+//                }
+//
+//                response.setTotalRows(response.getTotalRows()+1);
+//                int excelRowNumber = row.getRowNum()+1;
+//
+//                try{
+//                    RowOutcome outcome = processRow(row);
+//                    if(outcome == RowOutcome.CREATED) {
+//                        response.setCreated(response.getCreated()+1);
+//                    }
+//                    else {
+//                        response.setUpdated(response.getUpdated()+1);
+//                    }
+//
+//
+//                } catch (Exception e) {
+//                    response.setFailed(response.getFailed() + 1);
+//                    response.getErrors().add(new ImportError(excelRowNumber, e.getMessage()));
+//                }
+//
+//            }
+//
+//        } catch (BadRequestException e) {
+//            throw e;
+//        } catch (Exception e) {
+//            throw new BadRequestException("Could not read file: " + e.getMessage());
+//        }
+//
+//        return response;
+//    }
+
+
 }
