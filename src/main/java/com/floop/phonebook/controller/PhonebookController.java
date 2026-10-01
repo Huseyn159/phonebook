@@ -5,6 +5,7 @@ import com.floop.phonebook.dto.ImportResponse;
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.dto.PhonebookEntryResponse;
 import com.floop.phonebook.dto.SearchRequest;
+import com.floop.phonebook.entity.PhonebookResultSet;
 import com.floop.phonebook.service.PhonebookService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -86,6 +89,18 @@ public class PhonebookController {
             @RequestBody(required = false) SearchRequest searchRequest,
             Pageable pageable) {
         return phonebookService.distinctValues(field, searchValue, searchRequest, pageable);
+    }
+
+
+    @PostMapping("/import/async")
+    public ResponseEntity<Map<String, String>> importAsync(@RequestParam("file") MultipartFile file) throws IOException {
+        PhonebookResultSet resultSet = phonebookService.importAsync(file);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("resultSetId", resultSet.getId().toString());
+        response.put("status", resultSet.getStatus().name());
+
+        return ResponseEntity.ok(response);
     }
 
 
