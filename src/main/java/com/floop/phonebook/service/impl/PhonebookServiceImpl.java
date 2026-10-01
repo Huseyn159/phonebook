@@ -2,10 +2,14 @@ package com.floop.phonebook.service.impl;
 
 import com.floop.phonebook.dto.*;
 import com.floop.phonebook.entity.PhonebookEntry;
+import com.floop.phonebook.entity.PhonebookResultSet;
+import com.floop.phonebook.enums.ResultSetStatus;
+import com.floop.phonebook.enums.ResultSetType;
 import com.floop.phonebook.exception.BadRequestException;
 import com.floop.phonebook.exception.ResourceNotFoundException;
 import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
+import com.floop.phonebook.repository.PhonebookResultSetRepository;
 import com.floop.phonebook.search.PhonebookSpecificationBuilder;
 import com.floop.phonebook.service.PhonebookService;
 import jakarta.persistence.EntityManager;
@@ -29,7 +33,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,7 +49,7 @@ public class PhonebookServiceImpl implements PhonebookService {
     private final PhonebookSpecificationBuilder specificationBuilder;
     private final Validator validator;
     private final EntityManager entityManager;
-
+    private final PhonebookResultSetRepository resultSetRepository;
 
     private enum RowOutcome {
         CREATED, UPDATED
@@ -61,12 +69,13 @@ public class PhonebookServiceImpl implements PhonebookService {
     private static final int MAX_EXPORT_ROWS = 50_000;
 
     public PhonebookServiceImpl(PhonebookMapper mapper, PhonebookRepository phonebookRepository, Validator validator,
-                                PhonebookSpecificationBuilder specificationBuilder,  EntityManager entityManager) {
+                                PhonebookSpecificationBuilder specificationBuilder, EntityManager entityManager, PhonebookResultSetRepository resultSetRepository) {
         this.mapper = mapper;
         this.phonebookRepository = phonebookRepository;
         this.specificationBuilder = specificationBuilder;
         this.validator = validator;
         this.entityManager = entityManager;
+        this.resultSetRepository = resultSetRepository;
     }
 
 
@@ -170,6 +179,8 @@ public class PhonebookServiceImpl implements PhonebookService {
 
     }
 
+
+
     private Predicate buildCombinedPredicate(SearchRequest searchRequest, String searchValue, String fieldName,
                                              Root<PhonebookEntry> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
 
@@ -256,6 +267,42 @@ public class PhonebookServiceImpl implements PhonebookService {
         return response;
     }
 
+    @Override
+    public PhonebookResultSet importAsync(MultipartFile file) throws IOException {
+       String path = saveFileToDisk(file);
+        PhonebookResultSet resultSet = createInProgressResultSet(path);
+
+
+
+
+        return resultSet;
+    }
+
+
+    private String saveFileToDisk(MultipartFile file) throws IOException {
+        String uploadDir = "uploads/";
+        Files.createDirectories(Paths.get(uploadDir));
+
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Path filePath = Paths.get(uploadDir, fileName);
+
+        file.transferTo(filePath);
+
+        return filePath.toString();
+    }
+
+
+     private PhonebookResultSet createInProgressResultSet(String filePath){
+        PhonebookResultSet resultSet = new PhonebookResultSet();
+        resultSet.setType(ResultSetType.IMPORT);
+        resultSet.setStatus(ResultSetStatus.IN_PROGRESS);
+        resultSet.setFilePath(filePath);
+        resultSet.setCreatedAt(LocalDateTime.now());
+
+        PhonebookResultSet saved = resultSetRepository.save(resultSet);
+        return saved;
+
+     }
 
     private RowOutcome processRow(Row row){
 

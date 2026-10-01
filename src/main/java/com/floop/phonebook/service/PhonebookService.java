@@ -5,6 +5,7 @@ import com.floop.phonebook.dto.ImportResponse;
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.dto.PhonebookEntryResponse;
 import com.floop.phonebook.dto.SearchRequest;
+import com.floop.phonebook.entity.PhonebookResultSet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,8 @@ public interface PhonebookService {
     ImportResponse importFile(MultipartFile file);
 
     Page<String> distinctValues(String field, String searchValue, SearchRequest searchRequest, Pageable pageable);
+
+    PhonebookResultSet importAsync(MultipartFile file) throws IOException;
 
 
     void delete(UUID id);
