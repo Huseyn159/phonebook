@@ -119,28 +119,7 @@ public class PhonebookServiceImpl implements PhonebookService {
                 .map(mapper::toResponse);
     }
 
-    @Override
-    public byte[] export(SearchRequest searchRequest) throws IOException  {
-        Pageable cap = PageRequest.of(0, MAX_EXPORT_ROWS);
-
-
-        Specification<PhonebookEntry> spec = specificationBuilder.buildAll(searchRequest);
-        List<PhonebookEntry> responses = phonebookRepository.findAll(spec,cap).getContent();
-        List<PhonebookEntryResponse> responseList = responses.stream()
-                .map(mapper::toResponse)
-                .toList();
-
-        Workbook workbook = buildExportWorkbook(responseList);
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-            workbook.write(outputStream);
-            workbook.close();
-
-
-
-        return outputStream.toByteArray();
-    }
+    
 
     @Override
     public void delete(UUID id) {
@@ -150,6 +129,9 @@ public class PhonebookServiceImpl implements PhonebookService {
         phonebookRepository.deleteById(id);
     }
 
+
+
+    //==================================DISTINCT FIELD VALUES METHODS===================================================
 
     @Override
     public Page<String> distinctValues(String field, String searchValue, SearchRequest searchRequest, Pageable pageable) {
@@ -165,6 +147,7 @@ public class PhonebookServiceImpl implements PhonebookService {
         Root<PhonebookEntry> root = query.from(PhonebookEntry.class);
 
         query.select(root.get(fieldName).as(String.class)).distinct(true);
+
         query.where(buildCombinedPredicate(searchRequest,searchValue,fieldName,root,query,cb));
 
         List<String> results = entityManager.createQuery(query)
@@ -206,6 +189,8 @@ public class PhonebookServiceImpl implements PhonebookService {
         return cb.and(wherePredicate, notNullPredicate);
 
     }
+
+    //==================================DISTINCT FIELD VALUES METHODS END===============================================
 
 
 
@@ -364,7 +349,34 @@ public class PhonebookServiceImpl implements PhonebookService {
 
 
 
-    // --------------------------------------EXPORT HELPER METHODS START----------------------------------------
+    // --------------------------------------EXPORT  METHODS START----------------------------------------
+    @Override
+    public byte[] export(SearchRequest searchRequest) throws IOException  {
+        Pageable cap = PageRequest.of(0, MAX_EXPORT_ROWS);
+
+
+        Specification<PhonebookEntry> spec = specificationBuilder.buildAll(searchRequest);
+        List<PhonebookEntry> responses = phonebookRepository.findAll(spec,cap).getContent();
+        List<PhonebookEntryResponse> responseList = responses.stream()
+                .map(mapper::toResponse)
+                .toList();
+
+        Workbook workbook = buildExportWorkbook(responseList);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        workbook.write(outputStream);
+        workbook.close();
+
+
+
+        return outputStream.toByteArray();
+    }
+
+
+
+
+
     private String cellText(Object value) {
         return value == null ? "" : String.valueOf(value);
     }

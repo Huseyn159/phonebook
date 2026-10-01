@@ -140,7 +140,55 @@ databaseChangeLog:
                     nullable: false
 
 
-
-
+  - changeSet:
+      id: 6
+      author: huseyn
+      changes:
+        - createTable:
+            tableName: phonebook_result_set
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: file_path
+                  type: VARCHAR(500)
+              - column:
+                  name: total_rows
+                  type: INT
+              - column:
+                  name: created_count
+                  type: INT
+              - column:
+                  name: updated_count
+                  type: INT
+              - column:
+                  name: failed_count
+                  type: INT
+              - column:
+                  name: error_summary
+                  type: TEXT
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: finished_at
+                  type: TIMESTAMP
 
 
