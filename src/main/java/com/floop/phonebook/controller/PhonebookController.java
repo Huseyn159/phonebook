@@ -1,11 +1,9 @@
 package com.floop.phonebook.controller;
 
 
-import com.floop.phonebook.dto.ImportResponse;
-import com.floop.phonebook.dto.PhonebookEntryRequest;
-import com.floop.phonebook.dto.PhonebookEntryResponse;
-import com.floop.phonebook.dto.SearchRequest;
+import com.floop.phonebook.dto.*;
 import com.floop.phonebook.entity.PhonebookResultSet;
+import com.floop.phonebook.service.ImportProcessingService;
 import com.floop.phonebook.service.PhonebookService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -27,11 +25,13 @@ import java.util.UUID;
 public class PhonebookController {
 
     private final PhonebookService phonebookService;
+    private final ImportProcessingService importProcessingService;
 
 
-    public PhonebookController(PhonebookService phonebookService) {
+    public PhonebookController(PhonebookService phonebookService, ImportProcessingService importProcessingService) {
         this.phonebookService = phonebookService;
 
+        this.importProcessingService = importProcessingService;
     }
 
     @PostMapping
@@ -60,7 +60,7 @@ public class PhonebookController {
 
     @PostMapping("/import")
     public ResponseEntity<ImportResponse> importFile(@RequestParam("file") MultipartFile file) {
-        ImportResponse response = phonebookService.importFile(file);
+        ImportResponse response = importProcessingService.importFile(file);
         return ResponseEntity.ok(response);
     }
 
@@ -93,13 +93,12 @@ public class PhonebookController {
 
 
     @PostMapping("/import/async")
-    public ResponseEntity<Map<String, String>> importAsync(@RequestParam("file") MultipartFile file) throws IOException {
-        PhonebookResultSet resultSet = phonebookService.importAsync(file);
+    public ResponseEntity<ImportAsyncResponse> importAsync(@RequestParam("file") MultipartFile file) throws IOException {
+        PhonebookResultSet resultSet = importProcessingService.importAsync(file);  // phonebookService YOX, importProcessingService
 
-        Map<String, String> response = new HashMap<>();
-        response.put("resultSetId", resultSet.getId().toString());
-        response.put("status", resultSet.getStatus().name());
-
+        ImportAsyncResponse response = new ImportAsyncResponse();
+        response.setResultSetId(resultSet.getId());
+        response.setStatus(resultSet.getStatus());
         return ResponseEntity.ok(response);
     }
 
