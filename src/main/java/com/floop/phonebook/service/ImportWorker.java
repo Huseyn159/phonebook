@@ -10,6 +10,7 @@ import com.floop.phonebook.repository.PhonebookResultSetRepository;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.apache.poi.ss.usermodel.*;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
@@ -27,15 +28,17 @@ public class ImportWorker {
     private final PhonebookRepository phonebookRepository;
     private final Validator validator;
     private final PhonebookResultSetRepository resultSetRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public ImportWorker(PhonebookService phonebookService,
                         PhonebookRepository phonebookRepository,
                         Validator validator,
-                        PhonebookResultSetRepository resultSetRepository) {
+                        PhonebookResultSetRepository resultSetRepository, SimpMessagingTemplate messagingTemplate) {
         this.phonebookService = phonebookService;
         this.phonebookRepository = phonebookRepository;
         this.validator = validator;
         this.resultSetRepository = resultSetRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public ImportResponse processExcelStream(InputStream is) {
@@ -82,6 +85,7 @@ public class ImportWorker {
             resultSet.setErrorSummary(errorMessage);
         }
         resultSetRepository.save(resultSet);
+        messagingTemplate.convertAndSend("/topic/result-set/" + resultSetId, resultSet);
     }
 
     private RowOutcome processRow(Row row) {
