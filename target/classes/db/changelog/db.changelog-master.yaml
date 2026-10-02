@@ -191,4 +191,13 @@ databaseChangeLog:
                   name: finished_at
                   type: TIMESTAMP
 
-
+  - changeSet:
+      id: 7
+      author: huseyn
+      changes:
+        - addColumn:
+            tableName: app_user
+            columns:
+              - column:
+                  name: email
+                  type: VARCHAR(255)

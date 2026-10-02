@@ -22,12 +22,12 @@ public class AsyncImportProcessor {
     }
 
     @Async
-    public void processImportAsync(UUID resultSetId, String filePath) {
+    public void processImportAsync(UUID resultSetId, String filePath,String email) {
         try (InputStream is = new FileInputStream(filePath)) {
             ImportResponse response = importWorker.processExcelStream(is);
-            importWorker.finalizeResultSet(resultSetId, ResultSetStatus.COMPLETED, response, null);
+            importWorker.finalizeResultSet(resultSetId, ResultSetStatus.COMPLETED, response, null,email);
         } catch (Exception e) {
-            importWorker.finalizeResultSet(resultSetId, ResultSetStatus.FAILED, null, e.getMessage());
+            importWorker.finalizeResultSet(resultSetId, ResultSetStatus.FAILED, null, e.getMessage(),email);
         }
     }
 }

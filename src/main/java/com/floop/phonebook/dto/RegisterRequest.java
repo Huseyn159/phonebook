@@ -1,6 +1,7 @@
 package com.floop.phonebook.dto;
 
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -14,6 +15,10 @@ public class RegisterRequest {
     @Size(min = 6,max = 100,message = "Username must be between 6 and 100 characters")
     @NotBlank(message = "Please,enter username")
     private String username;
+
+    @NotBlank(message = "Please,enter email address")
+    @Email(message = "Email format is not valid")
+    private String email;
 
 
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")

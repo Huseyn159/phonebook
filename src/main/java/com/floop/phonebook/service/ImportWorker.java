@@ -29,16 +29,18 @@ public class ImportWorker {
     private final Validator validator;
     private final PhonebookResultSetRepository resultSetRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final EmailService emailService;
 
     public ImportWorker(PhonebookService phonebookService,
                         PhonebookRepository phonebookRepository,
                         Validator validator,
-                        PhonebookResultSetRepository resultSetRepository, SimpMessagingTemplate messagingTemplate) {
+                        PhonebookResultSetRepository resultSetRepository, SimpMessagingTemplate messagingTemplate, EmailService emailService) {
         this.phonebookService = phonebookService;
         this.phonebookRepository = phonebookRepository;
         this.validator = validator;
         this.resultSetRepository = resultSetRepository;
         this.messagingTemplate = messagingTemplate;
+        this.emailService = emailService;
     }
 
     public ImportResponse processExcelStream(InputStream is) {
@@ -71,7 +73,7 @@ public class ImportWorker {
         return response;
     }
 
-    public void finalizeResultSet(UUID resultSetId, ResultSetStatus status, ImportResponse response, String errorMessage) {
+    public void finalizeResultSet(UUID resultSetId, ResultSetStatus status, ImportResponse response, String errorMessage, String email) {
         var resultSet = resultSetRepository.findById(resultSetId).orElseThrow();
         resultSet.setStatus(status);
         resultSet.setFinishedAt(LocalDateTime.now());
@@ -86,6 +88,11 @@ public class ImportWorker {
         }
         resultSetRepository.save(resultSet);
         messagingTemplate.convertAndSend("/topic/result-set/" + resultSetId, resultSet);
+
+        if (email != null && !email.isBlank()) {
+            emailService.sendImportCompletedEmail(email, resultSet);
+        }
+
     }
 
     private RowOutcome processRow(Row row) {

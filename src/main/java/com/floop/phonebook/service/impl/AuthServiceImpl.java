@@ -34,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
         UserEntity userEntity = new UserEntity();
         userEntity.setUsername(request.getUsername());
         userEntity.setPassword(passwordEncoder.encode(request.getPassword()));
+        userEntity.setEmail(request.getEmail());
 
         userRepository.save(userEntity);
 

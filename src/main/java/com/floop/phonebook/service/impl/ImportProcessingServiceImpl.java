@@ -5,16 +5,19 @@ import com.floop.phonebook.dto.ImportResponse;
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.entity.PhonebookResultSet;
+import com.floop.phonebook.entity.UserEntity;
 import com.floop.phonebook.enums.ResultSetStatus;
 import com.floop.phonebook.enums.ResultSetType;
 import com.floop.phonebook.exception.BadRequestException;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
+import com.floop.phonebook.repository.UserRepository;
 import com.floop.phonebook.service.ImportProcessingService;
 import com.floop.phonebook.service.ImportWorker;
 import com.floop.phonebook.service.PhonebookService;
 import jakarta.validation.ConstraintViolation;
 import org.apache.poi.ss.usermodel.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,13 +39,15 @@ public class ImportProcessingServiceImpl implements ImportProcessingService {
     private final ImportWorker importWorker;
     private final AsyncImportProcessor asyncImportProcessor;
     private final PhonebookResultSetRepository resultSetRepository;
+    private final UserRepository userRepository;
 
     public ImportProcessingServiceImpl(ImportWorker importWorker,
                                        AsyncImportProcessor asyncImportProcessor,
-                                       PhonebookResultSetRepository resultSetRepository) {
+                                       PhonebookResultSetRepository resultSetRepository, UserRepository userRepository) {
         this.importWorker = importWorker;
         this.asyncImportProcessor = asyncImportProcessor;
         this.resultSetRepository = resultSetRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -61,7 +66,13 @@ public class ImportProcessingServiceImpl implements ImportProcessingService {
     public PhonebookResultSet importAsync(MultipartFile file) throws IOException {
         String path = saveFileToDisk(file);
         PhonebookResultSet resultSet = createInProgressResultSet(path);
-        asyncImportProcessor.processImportAsync(resultSet.getId(), path);
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        String email = userRepository.findByUsername(username)
+                        .map(UserEntity::getEmail)
+                        .orElse(null);
+
+        asyncImportProcessor.processImportAsync(resultSet.getId(), path,email);
         return resultSet;
     }
 
