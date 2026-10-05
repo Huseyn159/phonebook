@@ -9,7 +9,10 @@ import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
+import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.MailException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +24,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+
+@Slf4j
 @Component
 public class ImportWorker {
 
@@ -102,7 +107,11 @@ public class ImportWorker {
         messagingTemplate.convertAndSend("/topic/result-set/" + resultSetId, resultSet);
 
         if (email != null && !email.isBlank()) {
-            emailService.sendImportCompletedEmail(email, resultSet);
+           try {
+               emailService.sendImportCompletedEmail(email, resultSet);
+           }catch (MailException e) {
+               log.warn("Could not send email for result set {}", resultSetId, e);
+           }
         }
 
     }
