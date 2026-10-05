@@ -13,10 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 @Component
@@ -115,10 +112,10 @@ public class PhonebookSpecificationBuilder {
                     return cb.notEqual(root.get(field), convert(criteria.getValue(), type));
 
                 case IN:
-                    return root.get(field).in(toList(criteria.getValue()));
+                    return root.get(field).in(convertAll(toList(criteria.getValue()), type));
 
                 case NOT_IN:
-                    Predicate inPredicate = root.get(field).in(toList(criteria.getValue()));
+                    Predicate inPredicate = root.get(field).in(convertAll(toList(criteria.getValue()), type));
                     return cb.not(inPredicate);
 
                 case GREATER_THAN:
@@ -233,10 +230,18 @@ public class PhonebookSpecificationBuilder {
         String text = String.valueOf(raw);
 
         if (type == LocalDate.class) {
+
             try {
                 return LocalDate.parse(text);
             } catch (DateTimeParseException e) {
                 throw new BadRequestException("Invalid value for convert type to LocalDate: " + e.getMessage());
+            }
+        }
+        if (type == LocalDateTime.class) {
+            try {
+                return LocalDateTime.parse(text);
+            } catch (DateTimeParseException e) {
+                throw new BadRequestException("Invalid value for convert type to LocalDateTime: " + e.getMessage());
             }
         }
         if (type == Boolean.class ) {
@@ -247,5 +252,13 @@ public class PhonebookSpecificationBuilder {
             }
         }
         return text;
+    }
+
+    private List<Object> convertAll(List<?> values, Class<?> type) {
+        List<Object> result = new ArrayList<>();
+        for (Object v : values) {
+            result.add(convert(v,type));
+        }
+        return result;
     }
 }
