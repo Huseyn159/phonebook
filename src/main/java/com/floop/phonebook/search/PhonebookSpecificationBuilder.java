@@ -42,7 +42,7 @@ public class PhonebookSpecificationBuilder {
     private void validateDateTimeField(String field){
 
         if(!(field.equals("createdAt") || field.equals("updatedAt"))){
-            throw new BadRequestException("Field is invalid");
+            throw new BadRequestException("LAST_HOUR and LAST_MINUTE are only supported for createdAt and updatedAt fields.This -> " + field +" field is ot supported");
 
         }
     }
