@@ -82,6 +82,18 @@ public class ImportWorker {
             resultSet.setCreatedCount(response.getCreated());
             resultSet.setUpdatedCount(response.getUpdated());
             resultSet.setFailedCount(response.getFailed());
+            if (response.getErrors() != null && !response.getErrors().isEmpty()) {
+                StringBuilder summary = new StringBuilder();
+
+                for (int i = 0; i < response.getErrors().size() && i < 10; i++) {
+                    ImportError error = response.getErrors().get(i);
+                    summary.append("Row ").append(error.getRow())
+                            .append(": ").append(error.getMessage())
+                            .append("\n");
+                }
+
+                resultSet.setErrorSummary(summary.toString());
+            }
         }
         if (errorMessage != null) {
             resultSet.setErrorSummary(errorMessage);
