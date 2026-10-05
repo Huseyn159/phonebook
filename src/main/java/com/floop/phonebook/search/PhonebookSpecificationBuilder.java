@@ -8,8 +8,11 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -102,13 +105,14 @@ public class PhonebookSpecificationBuilder {
         return ((root, query, cb) -> {
             //--------------Case-lerde IS_MEMBER,ANY_OF heleki yoxdur,cunki phonebookda kollesiya tipli sahe yoxdur --------------
 
+            Class<?> type = root.get(field).getJavaType();
             switch (criteria.getOperation()) {
 
                 case EQUAL:
-                    return cb.equal(root.get(field), criteria.getValue());
+                    return cb.equal(root.get(field), convert(criteria.getValue(), type));
 
                 case NOT_EQUAL:
-                    return cb.notEqual(root.get(field), criteria.getValue());
+                    return cb.notEqual(root.get(field), convert(criteria.getValue(), type));
 
                 case IN:
                     return root.get(field).in(toList(criteria.getValue()));
@@ -218,5 +222,30 @@ public class PhonebookSpecificationBuilder {
         });
 
 
+    }
+
+
+    private Object convert(Object raw,Class<?> type) {
+        if (raw instanceof List<?>) {
+            throw new BadRequestException("Only one value is required");
+        }
+
+        String text = String.valueOf(raw);
+
+        if (type == LocalDate.class) {
+            try {
+                return LocalDate.parse(text);
+            } catch (DateTimeParseException e) {
+                throw new BadRequestException("Invalid value for convert type to LocalDate: " + e.getMessage());
+            }
+        }
+        if (type == Boolean.class ) {
+            if (text.equals("true") || text.equals("false")){
+            return Boolean.parseBoolean(text);}
+            else {
+                throw new BadRequestException("Expected true or false but got " + text);
+            }
+        }
+        return text;
     }
 }
