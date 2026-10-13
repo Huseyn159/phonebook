@@ -60,18 +60,19 @@ public class PhonebookSpecificationBuilder {
         return list;
     }
 
-    public Specification<PhonebookEntry> buildAll(SearchRequest searchRequest) {
+    public Specification<PhonebookEntry> buildAll(List<SearchCriteria> criteriaList) {
         Specification<PhonebookEntry> result = Specification.unrestricted();
-
-        if (searchRequest == null || searchRequest.getCriteria() == null) {
+        if (criteriaList == null) {
             return result;
         }
-        for (SearchCriteria criteria : searchRequest.getCriteria()) {
-            Specification<PhonebookEntry> current = build(criteria);
-            result = result.and(current);
+        for (SearchCriteria criteria : criteriaList) {
+            result = result.and(build(criteria));
         }
-
         return result;
+    }
+
+    public Specification<PhonebookEntry> buildAll(SearchRequest searchRequest) {
+        return buildAll(searchRequest == null ? null : searchRequest.getCriteria());
     }
 
     public Specification<PhonebookEntry> build(SearchCriteria criteria) {
