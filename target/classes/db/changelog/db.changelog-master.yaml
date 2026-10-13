@@ -201,3 +201,21 @@ databaseChangeLog:
               - column:
                   name: email
                   type: VARCHAR(255)
+
+  - changeSet:
+      id: 8
+      author: huseyn
+      changes:
+        - addColumn:
+            tableName: phonebook_result_set
+            columns:
+              - column:
+                  name: index_name
+                  type: VARCHAR(255)
+              - column:
+                  name: criteria_json
+                  type: TEXT
+              - column:
+                  name: expiration_time
+                  type: TIMESTAMP
+

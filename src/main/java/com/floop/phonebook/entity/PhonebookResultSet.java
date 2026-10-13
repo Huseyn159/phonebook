@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -34,6 +35,16 @@ public class PhonebookResultSet {
 
     @Column(name = "total_rows")
     private int totalRows;
+
+    //ES uchun yeni fieldler
+    @Column(name = "index_name")
+    private String indexName;
+
+    @Column(name = "criteria_json")
+    private String criteriaJson; //axtarisda ishledilmir yalniz qeyd ucun.Neyin sureti oldugunu anlamaq meqsedile
+
+    @Column(name = "expiration_time")
+    private LocalDateTime expirationTime; //scheduler ucun.Snapshotun omrunun sonu
 
     @Column(name = "updated_count")
     private int updatedCount;
