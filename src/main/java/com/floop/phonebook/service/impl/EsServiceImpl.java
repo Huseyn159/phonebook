@@ -2,18 +2,23 @@ package com.floop.phonebook.service.impl;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.Refresh;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.floop.phonebook.dto.EsSearchRequest;
+import com.floop.phonebook.dto.EsSearchResponse;
 import com.floop.phonebook.dto.PhonebookEntryResponse;
 import com.floop.phonebook.dto.SearchCriteria;
 import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.entity.PhonebookResultSet;
 import com.floop.phonebook.enums.ResultSetStatus;
 import com.floop.phonebook.enums.ResultSetType;
+import com.floop.phonebook.exception.BadRequestException;
 import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
@@ -28,6 +33,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,6 +63,51 @@ public class EsServiceImpl implements EsService {
         this.objectMapper = objectMapper;
         this.retentionDays = retentionDays;
     }
+
+    @Override
+    public EsSearchResponse esProcess(EsSearchRequest request, int page, int size) {
+
+        if (page<0||size<1){
+            throw new BadRequestException("page must be >= 0 and size must be >= 1");
+        }
+
+        if (request.getResultSetId()!=null){
+            throw new BadRequestException("Search with resultSetId is not dupprted yet");
+
+        }
+
+        PhonebookResultSet resultSet = createSnapshot(request.getCriteria());
+
+        SearchResponse<PhonebookEntryResponse> response;
+        try{
+            response =client.search(s->s
+                    .index(resultSet.getIndexName())
+                    .from(page*size)
+                    .size(size)
+                    .sort(so->so.field(f->f.field("createdAt").order(SortOrder.Desc)))
+                    .sort(so->so.field(f->f.field("id").order(SortOrder.Asc))), PhonebookEntryResponse.class);
+        }
+        catch (IOException e){
+            throw new IllegalStateException("Could not search index" + resultSet.getIndexName(),e);
+        }
+
+        List<PhonebookEntryResponse> content = new ArrayList<>();
+
+        for (Hit<PhonebookEntryResponse> hit : response.hits().hits()){
+            content.add(hit.source());
+        }
+
+        long total = response.hits().total().value();
+        EsSearchResponse result = new EsSearchResponse();
+        result.setResultSetId(resultSet.getId());
+        result.setContent(content);
+        result.setPage(page);
+        result.setSize(size);
+        result.setTotalElements(total);
+        result.setTotalPages((int) Math.ceil((double) total/size));
+        return result;
+    }
+
 
     private PhonebookResultSet createSnapshot(List<SearchCriteria> criteria){
         PhonebookResultSet resultSet = createInProgressResultSet(criteria);
@@ -163,6 +214,7 @@ public class EsServiceImpl implements EsService {
             throw new IllegalStateException("Bulk indexing failed for " + indexName,e);
         }
     }
+
 
 
 }
