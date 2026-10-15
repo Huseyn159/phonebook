@@ -19,6 +19,8 @@ import com.floop.phonebook.entity.PhonebookResultSet;
 import com.floop.phonebook.enums.ResultSetStatus;
 import com.floop.phonebook.enums.ResultSetType;
 import com.floop.phonebook.exception.BadRequestException;
+import com.floop.phonebook.exception.ConflictException;
+import com.floop.phonebook.exception.ResourceNotFoundException;
 import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
@@ -71,13 +73,20 @@ public class EsServiceImpl implements EsService {
             throw new BadRequestException("page must be >= 0 and size must be >= 1");
         }
 
-        if (request.getResultSetId()!=null){
-            throw new BadRequestException("Search with resultSetId is not dupprted yet");
-
+        PhonebookResultSet resultSet;
+        if (request.getResultSetId()==null){
+            resultSet = createSnapshot(request.getCriteria());
+        }else {
+            resultSet = loadUsableResultSet(request.getResultSetId(),request.getCriteria());
         }
 
-        PhonebookResultSet resultSet = createSnapshot(request.getCriteria());
+        return readPage(resultSet,page,size);
 
+
+    }
+
+
+    private EsSearchResponse readPage(PhonebookResultSet resultSet, int page, int size) {
         SearchResponse<PhonebookEntryResponse> response;
         try{
             response =client.search(s->s
@@ -215,6 +224,32 @@ public class EsServiceImpl implements EsService {
         }
     }
 
+
+    private PhonebookResultSet loadUsableResultSet(UUID id,List<SearchCriteria> criteria){
+        PhonebookResultSet resultSet = resultSetRepository.findById(id)
+                .orElseThrow(() ->new ResourceNotFoundException(id));
+
+        if (resultSet.getType()!=ResultSetType.SEARCH){
+            throw new BadRequestException("Result set " + id + " is not a search result set");
+        }
+
+        if (resultSet.getExpirationTime() != null
+                 && resultSet.getExpirationTime().isBefore(LocalDateTime.now())){
+            throw new ResourceNotFoundException(id);
+        }
+
+        if (resultSet.getStatus()!=ResultSetStatus.COMPLETED){
+            throw new ConflictException("Result set " + id + " is not ready, status: " + resultSet.getStatus());
+        }
+
+        //MUVEQQETI YOXLAMA !!!
+        if(criteria != null && !criteria.isEmpty()){
+            throw new BadRequestException("Extra criteria inside a snapshot are not supported yet");
+        }
+
+        return resultSet;
+
+    }
 
 
 }
