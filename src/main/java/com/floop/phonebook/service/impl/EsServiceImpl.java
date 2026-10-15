@@ -1,6 +1,7 @@
 package com.floop.phonebook.service.impl;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
@@ -66,11 +67,16 @@ public class EsServiceImpl implements EsService {
         this.retentionDays = retentionDays;
     }
 
+    private static final int MAX_RESULT_WINDOW = 10_000;
+
     @Override
     public EsSearchResponse esProcess(EsSearchRequest request, int page, int size) {
 
         if (page<0||size<1){
             throw new BadRequestException("page must be >= 0 and size must be >= 1");
+        }
+        if ((long) page * size + size > MAX_RESULT_WINDOW) {
+            throw new BadRequestException("page * size + size must not exceed " + MAX_RESULT_WINDOW);
         }
 
         PhonebookResultSet resultSet;
@@ -95,6 +101,12 @@ public class EsServiceImpl implements EsService {
                     .size(size)
                     .sort(so->so.field(f->f.field("createdAt").order(SortOrder.Desc)))
                     .sort(so->so.field(f->f.field("id").order(SortOrder.Asc))), PhonebookEntryResponse.class);
+        }
+        catch (ElasticsearchException e) {
+            if (e.status() == 404) {
+                throw new ResourceNotFoundException(resultSet.getId());
+            }
+            throw e;
         }
         catch (IOException e){
             throw new IllegalStateException("Could not search index" + resultSet.getIndexName(),e);
@@ -133,7 +145,8 @@ public class EsServiceImpl implements EsService {
             resultSet.setFinishedAt(LocalDateTime.now());
             resultSetRepository.save(resultSet);
             return resultSet;
-        }catch (RuntimeException e){
+        }
+        catch (RuntimeException e){
             resultSet.setStatus(ResultSetStatus.FAILED);
             resultSet.setErrorSummary(e.getMessage());
             resultSet.setFinishedAt(LocalDateTime.now());
