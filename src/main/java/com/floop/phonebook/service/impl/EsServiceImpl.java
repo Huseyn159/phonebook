@@ -27,11 +27,14 @@ import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
 import com.floop.phonebook.search.PhonebookSpecificationBuilder;
 import com.floop.phonebook.service.EsService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -40,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class EsServiceImpl implements EsService {
 
@@ -261,6 +265,36 @@ public class EsServiceImpl implements EsService {
         }
 
         return resultSet;
+
+    }
+
+
+    @Scheduled(fixedDelayString = "${phonebook.result-set.cleanup-interval-ms:3600000}")
+    public void deleteExpired(){
+        List<PhonebookResultSet> resultSets = resultSetRepository.findByTypeEqualsAndExpirationTimeIsBefore(ResultSetType.SEARCH,LocalDateTime.now());
+        for (PhonebookResultSet resultSet : resultSets){
+            if (deleteIndex(buildIndexName(resultSet.getId()))){
+                resultSetRepository.delete(resultSet);
+            }
+        }
+    }
+
+
+    private boolean deleteIndex(String indexName){
+        try{
+            client.indices().delete(i->i.index(indexName));
+            return true;
+        }
+        catch(ElasticsearchException e){
+            if (e.status() == 404){
+                return true;
+            }
+            log.warn("Could not delete index {}", indexName, e);
+            return false;
+        } catch (IOException e) {
+            log.warn("Could not delete index {}", indexName, e);
+            return false;
+        }
 
     }
 

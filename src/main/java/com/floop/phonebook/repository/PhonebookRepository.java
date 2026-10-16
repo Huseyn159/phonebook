@@ -16,4 +16,6 @@ public interface PhonebookRepository extends JpaRepository<PhonebookEntry, UUID>
     List<PhonebookEntry> findByNumberAndStopDateIsNotNullOrderByStopDateDesc(String number);
 
     Optional<PhonebookEntry> findByNumberAndActivatedDate(String number, LocalDate activatedDate);
+
+
 }
