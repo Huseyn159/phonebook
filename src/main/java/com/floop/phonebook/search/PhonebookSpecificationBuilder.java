@@ -19,21 +19,6 @@ import java.util.*;
 @Component
 public class PhonebookSpecificationBuilder {
 
-    private static final Map<String, String> ALLOWED_FIELDS = Map.ofEntries(
-            Map.entry("name", "name"),
-            Map.entry("surname", "surname"),
-            Map.entry("nationalid", "nationalId"),
-            Map.entry("dateofbirth", "dateOfBirth"),
-            Map.entry("fin", "fin"),
-            Map.entry("address", "address"),
-            Map.entry("city", "city"),
-            Map.entry("number", "number"),
-            Map.entry("activateddate", "activatedDate"),
-            Map.entry("stopdate", "stopDate"),
-            Map.entry("active", "active"),
-            Map.entry("createdat", "createdAt"),
-            Map.entry("updatedat", "updatedAt")
-    );
 
     private static final Set<SearchOperation> RELATIVE_TIME = EnumSet.of(
             SearchOperation.LAST_MINUTE, SearchOperation.LAST_HOUR, SearchOperation.LAST_DAY,
@@ -92,7 +77,7 @@ public class PhonebookSpecificationBuilder {
             throw new BadRequestException("Value is required for " + criteria.getOperation());
         }
 
-        String field = ALLOWED_FIELDS.get(criteria.getKey().toLowerCase());
+        String field = PhonebookFields.ALLOWED.get(criteria.getKey().toLowerCase());
         if (field == null) {
             throw new BadRequestException("Invalid search field: " + criteria.getKey());
         }
