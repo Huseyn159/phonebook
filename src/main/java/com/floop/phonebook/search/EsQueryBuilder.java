@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+import static com.floop.phonebook.search.PhonebookFields.DATE;
 import static com.floop.phonebook.search.PhonebookFields.TEXT;
 
 @Component
@@ -97,6 +98,9 @@ public class EsQueryBuilder {
 
     private Query equalQuery(SearchCriteria criteria) {
         String field = resolveField(criteria);
+        if (DATE.contains(field)){
+            validateDate(field,String.valueOf(criteria.getValue()));
+        }
 
         return Query.of(t->t
                 .term(f->f
@@ -117,7 +121,15 @@ public class EsQueryBuilder {
 
     private Query inQuery(SearchCriteria criteria){
         String field = resolveField(criteria);
+
+           if (DATE.contains(field)){
+               for (Object v : toValueList(criteria.getValue())){
+                   validateDate(field,String.valueOf(v));
+               }
+       }
         List<FieldValue> fieldValues =toValueList(criteria.getValue()).stream().map(v-> FieldValue.of(String.valueOf(v))).toList();
+
+
 
         return Query.of(t->t
                 .terms(f->f
