@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
@@ -25,6 +26,7 @@ import com.floop.phonebook.exception.ResourceNotFoundException;
 import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
+import com.floop.phonebook.search.EsQueryBuilder;
 import com.floop.phonebook.search.PhonebookSpecificationBuilder;
 import com.floop.phonebook.service.EsService;
 import lombok.extern.slf4j.Slf4j;
@@ -55,12 +57,13 @@ public class EsServiceImpl implements EsService {
     private final PhonebookResultSetRepository resultSetRepository;
     private final ObjectMapper objectMapper;
     private final int retentionDays;
+    private final EsQueryBuilder esQueryBuilder;
 
     public EsServiceImpl(PhonebookMapper mapper, ElasticsearchClient client, PhonebookRepository phonebookRepository,
                          PhonebookSpecificationBuilder specificationBuilder,
                          @Value("${phonebook.es.max-snapshot-rows}") int maxSnapshots,
                          PhonebookResultSetRepository resultSetRepository, ObjectMapper objectMapper,
-                         @Value("${phonebook.result-set.retention-days}") int retentionDays) {
+                         @Value("${phonebook.result-set.retention-days}") int retentionDays, EsQueryBuilder esQueryBuilder) {
         this.mapper = mapper;
         this.client = client;
         this.phonebookRepository = phonebookRepository;
@@ -69,12 +72,14 @@ public class EsServiceImpl implements EsService {
         this.resultSetRepository = resultSetRepository;
         this.objectMapper = objectMapper;
         this.retentionDays = retentionDays;
+        this.esQueryBuilder = esQueryBuilder;
     }
 
     private static final int MAX_RESULT_WINDOW = 10_000;
 
     @Override
     public EsSearchResponse esProcess(EsSearchRequest request, int page, int size) {
+
 
         if (page<0||size<1){
             throw new BadRequestException("page must be >= 0 and size must be >= 1");
@@ -84,23 +89,27 @@ public class EsServiceImpl implements EsService {
         }
 
         PhonebookResultSet resultSet;
+        Query query;
         if (request.getResultSetId()==null){
             resultSet = createSnapshot(request.getCriteria());
+            query = esQueryBuilder.build(null);
         }else {
-            resultSet = loadUsableResultSet(request.getResultSetId(),request.getCriteria());
+            resultSet = loadUsableResultSet(request.getResultSetId());
+            query = esQueryBuilder.build(request.getCriteria());
         }
 
-        return readPage(resultSet,page,size);
+        return readPage(resultSet,query,page,size);
 
 
     }
 
 
-    private EsSearchResponse readPage(PhonebookResultSet resultSet, int page, int size) {
+    private EsSearchResponse readPage(PhonebookResultSet resultSet, Query query, int page, int size) {
         SearchResponse<PhonebookEntryResponse> response;
         try{
             response =client.search(s->s
                     .index(resultSet.getIndexName())
+                    .query(query)
                     .from(page*size)
                     .size(size)
                     .sort(so->so.field(f->f.field("createdAt").order(SortOrder.Desc)))
@@ -242,7 +251,7 @@ public class EsServiceImpl implements EsService {
     }
 
 
-    private PhonebookResultSet loadUsableResultSet(UUID id,List<SearchCriteria> criteria){
+    private PhonebookResultSet loadUsableResultSet(UUID id){
         PhonebookResultSet resultSet = resultSetRepository.findById(id)
                 .orElseThrow(() ->new ResourceNotFoundException(id));
 
@@ -259,10 +268,7 @@ public class EsServiceImpl implements EsService {
             throw new ConflictException("Result set " + id + " is not ready, status: " + resultSet.getStatus());
         }
 
-        //MUVEQQETI YOXLAMA !!!
-        if(criteria != null && !criteria.isEmpty()){
-            throw new BadRequestException("Extra criteria inside a snapshot are not supported yet");
-        }
+
 
         return resultSet;
 
