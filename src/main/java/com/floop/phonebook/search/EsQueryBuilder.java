@@ -7,6 +7,9 @@ import com.floop.phonebook.exception.BadRequestException;
 import org.springframework.stereotype.Component;
 
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -134,22 +137,33 @@ public class EsQueryBuilder {
 
         switch (criteria.getOperation()) {
             case GREATER_THAN -> {
+                validateDate(field,String.valueOf(criteria.getValue()));
                 return    Query.of(q -> q.range(r -> r.date(d -> d.field(field).gt(value))));
             }
             case LESS_THAN -> {
+                validateDate(field,String.valueOf(criteria.getValue()));
                 return Query.of(q->q.range(r->r.date(d->d.field(field).lt(value))));
             }
             case GREATER_THAN_EQUAL -> {
+                validateDate(field,String.valueOf(criteria.getValue()));
+
                 return Query.of(q->q.range(r->r.date(d->d.field(field).gte(value))));
             }
             case LESS_THAN_EQUAL -> {
+                validateDate(field,String.valueOf(criteria.getValue()));
+
                 return Query.of(q->q.range(r->r.date(d->d.field(field).lte(value))));
             }
             case BETWEEN -> {
+
                 List<?> values = toValueList(criteria.getValue());
+
+
                 if (values.size()!=2){
                      throw new BadRequestException("Please enter 2 value");
                 }
+                validateDate(field,String.valueOf(values.get(0)));
+                validateDate(field,String.valueOf(values.get(1)));
 
             return Query.of(q->q.range(r->r.date(d->d.field(field)
                     .gte(String.valueOf(values.get(0)))
@@ -157,7 +171,19 @@ public class EsQueryBuilder {
             }
 
             default -> throw new BadRequestException("Unsupported range operation: " + criteria.getOperation());
+        }
+    }
 
+    private void validateDate(String field,String value){
+        try{
+            LocalDateTime.parse(value);
+        }catch (DateTimeParseException e){
+           try {
+               LocalDate.parse(value);
+           }
+            catch (DateTimeParseException c){
+               throw new BadRequestException("Invalid date for " + field + ": " + value);
+            }
         }
 
 
