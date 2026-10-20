@@ -1,21 +1,15 @@
 package com.floop.phonebook.service.impl;
 
-import com.floop.phonebook.dto.ImportError;
 import com.floop.phonebook.dto.ImportResponse;
-import com.floop.phonebook.dto.PhonebookEntryRequest;
-import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.entity.PhonebookResultSet;
 import com.floop.phonebook.entity.UserEntity;
 import com.floop.phonebook.enums.ResultSetStatus;
 import com.floop.phonebook.enums.ResultSetType;
 import com.floop.phonebook.exception.BadRequestException;
-import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
 import com.floop.phonebook.repository.UserRepository;
 import com.floop.phonebook.service.ImportProcessingService;
 import com.floop.phonebook.service.ImportWorker;
-import com.floop.phonebook.service.PhonebookService;
-import jakarta.validation.ConstraintViolation;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,12 +20,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class ImportProcessingServiceImpl implements ImportProcessingService {

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 @Component
 public class ImportWorker {
 
+    private final DataFormatter formatter = new DataFormatter();
     private final PhonebookService phonebookService;
     private final PhonebookRepository phonebookRepository;
     private final Validator validator;
@@ -144,24 +146,48 @@ public class ImportWorker {
         request.setName(capitalize(readString(row, 0)));
         request.setSurname(capitalize(readString(row, 1)));
         request.setNationalId(readString(row, 2));
-        request.setDateOfBirth(readLocalDate(row, 3));
         request.setFin(readString(row, 4));
         request.setAddress(readString(row, 5));
         request.setCity(capitalize(readString(row, 6)));
         request.setNumber(readString(row, 7));
-        request.setActivatedDate(readLocalDate(row, 8));
-        request.setStopDate(readLocalDate(row, 9));
+        request.setDateOfBirth(readLocalDate(row, 3, "dateOfBirth"));
+        request.setActivatedDate(readLocalDate(row, 8, "activatedDate"));
+        request.setStopDate(readLocalDate(row, 9, "stopDate"));
         return request;
     }
 
+//    private String readString(Row row, int index) {
+//        Cell cell = row.getCell(index);
+//        return cell == null ? null : cell.getStringCellValue().trim();
+//    }
+//
+//    private LocalDate readLocalDate(Row row, int index) {
+//        Cell cell = row.getCell(index);
+//        return cell == null ? null : cell.getLocalDateTimeCellValue().toLocalDate();
+//    }
+
     private String readString(Row row, int index) {
         Cell cell = row.getCell(index);
-        return cell == null ? null : cell.getStringCellValue().trim();
+        if (cell == null) return null;
+        String value = formatter.formatCellValue(cell).trim();
+        return value.isEmpty() ? null : value;
     }
 
-    private LocalDate readLocalDate(Row row, int index) {
+    private LocalDate readLocalDate(Row row, int index, String fieldName) {
         Cell cell = row.getCell(index);
-        return cell == null ? null : cell.getLocalDateTimeCellValue().toLocalDate();
+        if (cell == null || cell.getCellType() == CellType.BLANK) return null;
+
+        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+            return cell.getLocalDateTimeCellValue().toLocalDate();
+        }
+
+        String text = formatter.formatCellValue(cell).trim();
+        if (text.isEmpty()) return null;
+        try {
+            return LocalDate.parse(text);
+        } catch (DateTimeParseException e) {
+            throw new BadRequestException(fieldName + ": invalid date '" + text + "', expected yyyy-MM-dd");
+        }
     }
 
     private String capitalize(String value) {

@@ -3,6 +3,7 @@ package com.floop.phonebook.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +25,7 @@ public class PhonebookEntryRequest {
     @Size(max = 50)
     private String nationalId;
 
+    @Past
     private LocalDate dateOfBirth;
 
     @Size(max = 20)
@@ -36,6 +38,7 @@ public class PhonebookEntryRequest {
     private String city;
 
     @Size(max = 30)
+    @NotBlank
     private String number;
 
     @NotNull
