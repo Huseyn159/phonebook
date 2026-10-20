@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -139,6 +140,7 @@ public class EsServiceImpl implements EsService {
         result.setSize(size);
         result.setTotalElements(total);
         result.setTotalPages((int) Math.ceil((double) total/size));
+        result.setTruncated(resultSet.isTruncated());
         return result;
     }
 
@@ -147,11 +149,13 @@ public class EsServiceImpl implements EsService {
         PhonebookResultSet resultSet = createInProgressResultSet(criteria);
         String indexName = buildIndexName(resultSet.getId());
 
+
         try {
             Page<PhonebookEntry> page = fetchMatchingRows(criteria);
             createIndex(indexName);
             bulkIndex(indexName, page.getContent());
 
+            resultSet.setTruncated(page.getTotalElements() > maxSnapshots);
             resultSet.setIndexName(indexName);
             resultSet.setStatus(ResultSetStatus.COMPLETED);
             resultSet.setTotalRows(page.getContent().size());
@@ -169,7 +173,8 @@ public class EsServiceImpl implements EsService {
     }
 
     private Page<PhonebookEntry> fetchMatchingRows(List<SearchCriteria> criteria){
-        Pageable cap = PageRequest.of(0,maxSnapshots);
+        Pageable cap = PageRequest.of(0, maxSnapshots,
+                Sort.by("createdAt").descending().and(Sort.by("id")));
         Specification<PhonebookEntry> spec = specificationBuilder.buildAll(criteria);
         return phonebookRepository.findAll(spec,cap);
 

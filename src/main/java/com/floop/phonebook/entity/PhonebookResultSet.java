@@ -64,5 +64,8 @@ public class PhonebookResultSet {
     @Column(name = "finished_at",nullable = true)
     private LocalDateTime finishedAt;
 
+    @Column(name = "truncated")
+    private boolean truncated;
+
 
 }

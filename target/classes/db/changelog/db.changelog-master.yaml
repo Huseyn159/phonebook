@@ -219,3 +219,16 @@ databaseChangeLog:
                   name: expiration_time
                   type: TIMESTAMP
 
+  - changeSet:
+      id: 9
+      author: huseyn
+      changes:
+        - addColumn:
+            tableName: phonebook_result_set
+            columns:
+              - column:
+                  name: truncated
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
