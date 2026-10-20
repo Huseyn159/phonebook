@@ -203,6 +203,11 @@ public class ImportWorker {
     }
 
     private boolean isRowEmpty(Row row) {
-        return readString(row, 0) == null && readString(row, 1) == null;
+        for (int i = 0; i <= 9; i++) {
+            if (readString(row, i) != null) {
+                return false;
+            }
+        }
+        return true;
     }
 }
