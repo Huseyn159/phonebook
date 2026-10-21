@@ -6,6 +6,7 @@ import com.floop.phonebook.dto.LoginRequest;
 import com.floop.phonebook.dto.RegisterRequest;
 import com.floop.phonebook.entity.UserEntity;
 import com.floop.phonebook.exception.BadRequestException;
+import com.floop.phonebook.exception.UnauthorizedException;
 import com.floop.phonebook.repository.UserRepository;
 import com.floop.phonebook.service.AuthService;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,12 +19,16 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final String dummyHash;
 
     public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.dummyHash = passwordEncoder.encode("timing-attack-dummy");
     }
+
+    private static final String INVALID_CREDENTIALS = "Invalid username or password";
 
     @Override
     public String register(RegisterRequest request) {
@@ -44,19 +49,17 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
 
+        UserEntity user = userRepository.findByUsername(request.getUsername()).orElse(null);
 
-        UserEntity userEntity = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new BadRequestException(
-                        "User with username " + request.getUsername() + " not found"
-                ));
+        String hash = (user!=null) ? user.getPassword() : dummyHash;
+        boolean passwordMatches = passwordEncoder.matches(request.getPassword(),hash);
 
-
-        if (!passwordEncoder.matches(request.getPassword(), userEntity.getPassword())) {
-            throw new BadRequestException("Wrong password");
+        if (user == null || !passwordMatches){
+            throw new UnauthorizedException(INVALID_CREDENTIALS);
         }
 
         AuthResponse authResponse = new AuthResponse();
-        authResponse.setToken(jwtUtil.generateToken(userEntity.getUsername()));
+        authResponse.setToken(jwtUtil.generateToken(user.getUsername()));
 
         return authResponse;
 
