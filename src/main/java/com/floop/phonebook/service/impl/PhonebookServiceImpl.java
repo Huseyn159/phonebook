@@ -150,6 +150,8 @@ public class PhonebookServiceImpl implements PhonebookService {
         query.select(root.get(fieldName).as(String.class)).distinct(true);
 
         query.where(buildCombinedPredicate(searchRequest,searchValue,fieldName,root,query,cb));
+        query.orderBy(cb.asc(root.get(fieldName)));
+
 
         List<String> results = entityManager.createQuery(query)
                 .setFirstResult((int) pageable.getOffset())
