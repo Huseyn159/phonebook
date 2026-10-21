@@ -189,7 +189,7 @@ public class PhonebookServiceImpl implements PhonebookService {
 
 
     //---------------------------------------IMPORT METHODS  ----------------------------------------
-    //    Metodlari ImportWorkere kocurdum,
+    //    Metodlari ImportWorkere kocurdum
 
 
     // --------------------------------------EXPORT  METHODS START----------------------------------------
