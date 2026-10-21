@@ -6,10 +6,11 @@ import com.floop.phonebook.dto.LoginRequest;
 import com.floop.phonebook.dto.RegisterRequest;
 import com.floop.phonebook.entity.UserEntity;
 import com.floop.phonebook.exception.BadRequestException;
-import com.floop.phonebook.exception.UnauthorizedException;
 import com.floop.phonebook.repository.UserRepository;
 import com.floop.phonebook.service.AuthService;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,13 +20,13 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final String dummyHash;
+    private final AuthenticationManager authenticationManager;
 
-    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
-        this.dummyHash = passwordEncoder.encode("timing-attack-dummy");
+        this.authenticationManager = authenticationManager;
     }
 
     private static final String INVALID_CREDENTIALS = "Invalid username or password";
@@ -49,21 +50,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
 
-        UserEntity user = userRepository.findByUsername(request.getUsername()).orElse(null);
-
-        String hash = (user!=null) ? user.getPassword() : dummyHash;
-        boolean passwordMatches = passwordEncoder.matches(request.getPassword(),hash);
-
-        if (user == null || !passwordMatches){
-            throw new UnauthorizedException(INVALID_CREDENTIALS);
-        }
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
         AuthResponse authResponse = new AuthResponse();
-        authResponse.setToken(jwtUtil.generateToken(user.getUsername()));
-
+        authResponse.setToken(jwtUtil.generateToken(authentication.getName()));
         return authResponse;
-
-
 
     }
 }
