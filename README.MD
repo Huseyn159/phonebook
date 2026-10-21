@@ -172,7 +172,7 @@ Diger operatorlar (`NOT_*`, `LAST_*` ve s.) snapshot daxilinde desteklenmir -> 4
 ### Melum mehdudiyyetler
 
 - Her `resultSetId`-siz sorgu yeni snapshot ve yeni indeks yaradir (eyni filtr ucun movcud olan yeniden istifade olunmur). Bu bilerekdir: tapshiriq bunu teleb edir, snapshot "o anin sekli"dir ve yeni axtaris cari melumati gostermelidir; kohne snapshot-i paylasmaq kohne neticeni sessizce qaytara biler, `resultSetId`-nin ise sahibi yoxdur. Gelecekde optimallasdirma lazim olsa: `criteriaHash` + `createdBy` saxlayib, yalniz eyni istifadecinin, eyni filtrli ve yeni (meselen 5-10 deq.-den az) snapshot-ini yeniden istifade etmek olar
-- Snapshot en cox `max-snapshot-rows` setirdir; filtr bundan cox netice tapsa, hamisi snapshot-a dusmur. Cavabdaki `truncated` sahesi hele doldurulmur (hemise `false`)
+- Snapshot ən çox max-snapshot-rows sətirdir. Filtr bundan çox nəticə tapsa, ən yeni (createdAt azalan, sonra id) sətirlər snapshot-a düşür və cavabda truncated: true qaytarılır. Bu bayraq snapshot ilə birlikdə phonebook_result_set.truncated sütununda saxlanır, ona görə resultSetId ilə sonrakı səhifələrdə də düzgün qaytarılır.
 - `from + size` 10 000-den cox ola bilmez (`search_after` yoxdur)
 - `MATCH` soz esaslidir, soz daxilinde hisse axtarisi (`LIKE '%li%'` kimi) etmir; bunun ucun PostgreSQL axtarisi (`/search`) istifade olunur
 - `resultSetId` sahibsizdir: sisteme daxil olmus istifadeci, bildiyi istenilen `resultSetId` ile snapshot-i oxuya biler
