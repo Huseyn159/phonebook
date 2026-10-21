@@ -77,7 +77,7 @@ public class PhonebookSpecificationBuilder {
             throw new BadRequestException("Value is required for " + criteria.getOperation());
         }
 
-        String field = PhonebookFields.ALLOWED.get(criteria.getKey().toLowerCase());
+        String field = PhonebookFields.ALLOWED.get(criteria.getKey().toLowerCase(Locale.ROOT));
         if (field == null) {
             throw new BadRequestException("Invalid search field: " + criteria.getKey());
         }
@@ -165,16 +165,16 @@ public class PhonebookSpecificationBuilder {
                 case LAST_MONTH:
 
                     LocalDate lastMonth = LocalDate.now().minusMonths(1);
-                    return cb.greaterThanOrEqualTo(root.get(field),lastMonth);
+                    return cb.greaterThanOrEqualTo(root.get(field),dateFrom(lastMonth,type));
 
                 case LAST_WEEK:
 
                     LocalDate lastWeek = LocalDate.now().minusWeeks(1);
-                    return cb.greaterThanOrEqualTo(root.get(field), lastWeek);
+                    return cb.greaterThanOrEqualTo(root.get(field), dateFrom(lastWeek,type));
 
                 case LAST_DAY:
                     LocalDate lastDay = LocalDate.now().minusDays(1);
-                    return cb.greaterThanOrEqualTo(root.get(field), lastDay);
+                    return cb.greaterThanOrEqualTo(root.get(field), dateFrom(lastDay,type));
 
                 case LAST_HOUR:
                     validateDateTimeField(field);
@@ -244,6 +244,17 @@ public class PhonebookSpecificationBuilder {
             throw new BadRequestException("MATCH operations require a text value");
         }
         return text;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Comparable dateFrom(LocalDate date,Class<?> type){
+        if (type == LocalDate.class) return date;
+
+        if (type == LocalDateTime.class) {
+            return date.atStartOfDay();
+        }
+
+        throw new BadRequestException("LAST_DAY, LAST_WEEK and LAST_MONTH are only supported for date fields");
     }
 
     private List<Object> convertAll(List<?> values, Class<?> type) {
