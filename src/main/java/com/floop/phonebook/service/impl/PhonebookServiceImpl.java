@@ -3,6 +3,7 @@ package com.floop.phonebook.service.impl;
 import com.floop.phonebook.dto.*;
 import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.exception.BadRequestException;
+import com.floop.phonebook.exception.ConflictException;
 import com.floop.phonebook.exception.ResourceNotFoundException;
 import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
@@ -15,6 +16,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -73,15 +75,8 @@ public class PhonebookServiceImpl implements PhonebookService {
         PhonebookEntry entry = mapper.toEntity(request);
         entry.setActive(active);
 
-        PhonebookEntry saved = phonebookRepository.save(entry);
+        PhonebookEntry saved = saveOrConflict(entry, request.getNumber());
         return mapper.toResponse(saved);
-    }
-
-    @Override
-    public PhonebookEntryResponse getById(UUID id) {
-        return phonebookRepository.findById(id)
-                .map(mapper::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException(id));
     }
 
     @Override
@@ -97,10 +92,25 @@ public class PhonebookServiceImpl implements PhonebookService {
         mapper.updateEntityFromRequest(request, entry);
         entry.setActive(active);
 
-        PhonebookEntry saved = phonebookRepository.save(entry);
-
+        PhonebookEntry saved = saveOrConflict(entry, request.getNumber());
         return mapper.toResponse(saved);
     }
+
+    private PhonebookEntry saveOrConflict(PhonebookEntry entry, String number) {
+        try {
+            return phonebookRepository.save(entry);
+        } catch (DataIntegrityViolationException e) {
+            throw new ConflictException("Number " + number + " already has an active entry");
+        }
+    }
+    @Override
+    public PhonebookEntryResponse getById(UUID id) {
+        return phonebookRepository.findById(id)
+                .map(mapper::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException(id));
+    }
+
+
 
     @Override
     public Page<PhonebookEntryResponse> search(SearchRequest searchRequest, Pageable pageable) {
