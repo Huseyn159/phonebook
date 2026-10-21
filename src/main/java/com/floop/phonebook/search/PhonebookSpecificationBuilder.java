@@ -105,68 +105,59 @@ public class PhonebookSpecificationBuilder {
                     return cb.not(inPredicate);
 
                 case GREATER_THAN:
-                    Comparable minThreshold = (Comparable) criteria.getValue();
-                    return cb.greaterThan(root.get(field),minThreshold);
-
+                   return cb.greaterThan(root.get(field),comparable(criteria.getValue(),type));
 
                 case LESS_THAN:
-
-                    Comparable maxThreshold = (Comparable) criteria.getValue();
-                    return cb.lessThan(root.get(field),maxThreshold);
-
+                    return cb.lessThan(root.get(field),comparable(criteria.getValue(),type));
 
                 case GREATER_THAN_EQUAL:
-                    Comparable minEqThreshold = (Comparable) criteria.getValue();
-                    return cb.greaterThanOrEqualTo(root.get(field),minEqThreshold);
+
+                    return cb.greaterThanOrEqualTo(root.get(field),comparable(criteria.getValue(),type));
 
                 case LESS_THAN_EQUAL:
-                    Comparable maxEzThreshold = (Comparable) criteria.getValue();
-
-                    return cb.lessThanOrEqualTo(root.get(field),maxEzThreshold);
-
+                   return cb.lessThanOrEqualTo(root.get(field),comparable(criteria.getValue(),type));
 
                 case BETWEEN:
-                    List<?> values = (List<?>) criteria.getValue();
 
-                    if (values.size() != 2) {
-                        throw new BadRequestException("Invalid number of values");
+                    if (!(criteria.getValue() instanceof List<?> values) || values.size()!=2) {
+                        throw new BadRequestException("BETWEEN requires exactly 2 values");
                     }
 
-                    Comparable startValue = (Comparable) values.get(0);
-                    Comparable endValue = (Comparable) values.get(1);
+                    Comparable startValue = comparable(values.get(0),type);
+                    Comparable endValue = comparable(values.get(1),type);
 
                     return cb.between(root.get(field), startValue, endValue);
 
 
                 case MATCH:
 
-                   String value = (String) criteria.getValue();
+                   String value = likeText(criteria.getValue(),type);
                    String pattern = "%" + value + "%";
                    return cb.like(root.get(field), pattern);
 
                 case MATCH_START:
-                    String valueStart = (String) criteria.getValue();
+                    String valueStart = likeText(criteria.getValue(),type);
                     String patternStart =  valueStart + "%";
                     return cb.like(root.get(field), patternStart);
 
                 case MATCH_END:
-                    String valueEnd = (String) criteria.getValue();
+                    String valueEnd = likeText(criteria.getValue(),type);
                     String patternEnd =  "%" + valueEnd ;
                     return cb.like(root.get(field), patternEnd);
 
                 case NOT_MATCH:
 
-                    String notMatch = (String) criteria.getValue();
+                    String notMatch = likeText(criteria.getValue(),type);
                     String patternNotMatch = "%" + notMatch + "%";
                     return cb.notLike(root.get(field), patternNotMatch);
 
                 case NOT_MATCH_START:
-                    String notMatchStart = (String) criteria.getValue();
+                    String notMatchStart = likeText(criteria.getValue(),type);
                     String patternNotMatchStart = notMatchStart + "%";
                     return cb.notLike(root.get(field), patternNotMatchStart);
 
                 case NOT_MATCH_END:
-                    String notMatchEnd = (String) criteria.getValue();
+                    String notMatchEnd = likeText(criteria.getValue(),type);
                     String patternNotMatchEnd = "%" + notMatchEnd;
                     return cb.notLike(root.get(field), patternNotMatchEnd);
 
@@ -236,6 +227,21 @@ public class PhonebookSpecificationBuilder {
             else {
                 throw new BadRequestException("Expected true or false but got " + text);
             }
+        }
+        return text;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Comparable comparable(Object raw,Class<?> type){
+        return (Comparable) convert(raw,type);
+    }
+
+    private String likeText(Object raw,Class<?> type){
+        if (type!=String.class){
+            throw new BadRequestException("MATCH operation are only supported for text fields");
+        }
+        if (!(raw instanceof String text)){
+            throw new BadRequestException("MATCH operations require a text value");
         }
         return text;
     }
