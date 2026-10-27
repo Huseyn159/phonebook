@@ -11,6 +11,9 @@ import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.search.PhonebookSpecificationBuilder;
 import jakarta.persistence.EntityManager;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -18,8 +21,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -399,5 +407,38 @@ class PhonebookServiceImplTest {
 
     //=============================================EXPORT TESTS=========================================================
 
+    @Test
+    void export_whenOneEntry_writesHeaderAndOneRow() throws IOException {
+        //Arrange
+        PhonebookEntry entry = new PhonebookEntry();
+
+        PhonebookEntryResponse response = new PhonebookEntryResponse();
+        response.setName("Ali");
+        response.setNumber("0501234567");
+        response.setActivatedDate(LocalDate.of(2020,1,1));
+
+        when(phonebookRepository.findAll(any(Specification.class),any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(entry)));
+        when(mapper.toResponse(entry)).thenReturn(response);
+        when(specificationBuilder.buildAll(any(SearchRequest.class)))
+                .thenReturn(Specification.unrestricted());
+
+        //Act
+
+        byte[] result = service.export(new SearchRequest());
+
+
+        //Assert
+        Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(result));
+        Sheet sheet = workbook.getSheetAt(0);
+
+        assertThat(sheet.getRow(0).getCell(1).getStringCellValue()).isEqualTo("Name");
+        assertThat(sheet.getRow(1).getCell(1).getStringCellValue()).isEqualTo("Ali");
+        assertThat(sheet.getRow(1).getCell(8).getStringCellValue()).isEqualTo("0501234567");
+        assertThat(sheet.getLastRowNum()).isEqualTo(1);
+
+
+
+    }
 
 }
