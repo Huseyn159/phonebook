@@ -2,6 +2,7 @@ package com.floop.phonebook.service.impl;
 
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.dto.PhonebookEntryResponse;
+import com.floop.phonebook.dto.SearchRequest;
 import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.exception.BadRequestException;
 import com.floop.phonebook.exception.ConflictException;
@@ -17,12 +18,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
-
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -204,6 +203,31 @@ class PhonebookServiceImplTest {
 
     }
 
+    //===========================================GET(READ) TESTS========================================================
+
+    @Test
+    void getById_whenEntryNotFound_throwsResourceNotFound(){
+        UUID id = UUID.randomUUID();
+        assertThatThrownBy(()->service.getById(id))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(id.toString());
+    }
+
+    @Test
+    void getById_whenEntryFound_returnsResponse(){
+        UUID id = UUID.randomUUID();
+        PhonebookEntry entry = new PhonebookEntry();
+        entry.setId(id);
+        PhonebookEntryResponse response = new PhonebookEntryResponse();
+
+        when(phonebookRepository.findById(id)).thenReturn(Optional.of(entry));
+        when(mapper.toResponse(entry)).thenReturn(response);
+
+        PhonebookEntryResponse result = service.getById(id);
+
+        assertThat(result).isSameAs(response);
+    }
+
 
 
 
@@ -331,6 +355,49 @@ class PhonebookServiceImplTest {
         verify(mapper).updateEntityFromRequest(request,entry);
         assertThat(result).isSameAs(response);
     }
+
+    //===========================================DELETE TESTS===========================================================
+
+    @Test
+    void delete_whenEntryNotFound_throwsResourceNotFound(){
+
+
+        UUID id = UUID.randomUUID();
+
+        assertThatThrownBy(()->service.delete(id))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(id.toString());
+        verify(phonebookRepository, never()).deleteById(any());
+
+    }
+
+    @Test
+    void delete_whenEntryFound_deleteFromDb(){
+        //Arrange
+        UUID id = UUID.randomUUID();
+        when(phonebookRepository.existsById(id)).thenReturn(true);
+        //Act
+        service.delete(id);
+        //Assert
+        verify(phonebookRepository).deleteById(id);
+
+    }
+
+    //========================================DISTINCT TEST=============================================================
+    @Test
+    void distinctValues_whenFieldIsNotOnWhiteList_throwsBadRequest(){
+        String field = "password";
+        SearchRequest request = new SearchRequest();
+        Pageable pageable = PageRequest.of(0,4);
+
+
+        assertThatThrownBy(()->service.distinctValues(field,"123",request,pageable))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining(field);
+        verifyNoInteractions(entityManager);
+    }
+
+    //=============================================EXPORT TESTS=========================================================
 
 
 }
