@@ -298,6 +298,7 @@ public class PhonebookServiceImpl implements PhonebookService {
             return;
         }
 
+
         if (active) {
             List<PhonebookEntry> activeRows = phonebookRepository.findByNumberAndActiveTrue(number);
 

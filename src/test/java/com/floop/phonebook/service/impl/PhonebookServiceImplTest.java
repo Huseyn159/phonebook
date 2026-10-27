@@ -5,6 +5,7 @@ import com.floop.phonebook.dto.PhonebookEntryResponse;
 import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.exception.BadRequestException;
 import com.floop.phonebook.exception.ConflictException;
+import com.floop.phonebook.exception.ResourceNotFoundException;
 import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.search.PhonebookSpecificationBuilder;
@@ -20,6 +21,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +43,9 @@ class PhonebookServiceImplTest {
 
     @InjectMocks PhonebookServiceImpl service;
 
+
+
+    //===========================================CREATE TESTS===========================================================
 
     @Test
     void create_whenNumberAlreadyHasActiveEntry_throwsBadRequest(){
@@ -197,16 +202,135 @@ class PhonebookServiceImplTest {
         assertThat(captor.getValue().isActive()).isFalse();
         verify(phonebookRepository,never()).findByNumberAndActiveTrue(any());
 
+    }
 
 
 
 
+
+    //===========================================UPDATE TESTS===========================================================
+
+    @Test
+    void update_whenIdNotFound_throwsResourceNotFound(){
+        //Arrange
+        PhonebookEntryRequest request = new PhonebookEntryRequest();
+        UUID id = UUID.randomUUID();
+
+        //Act+Assert
+        assertThatThrownBy(()->service.update(id,request))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(id.toString());
+
+        verify(phonebookRepository,never()).save(any());
+    }
+
+    @Test
+    void update_whenDifferentActiveEntry_throwsBadRequest(){
+        //Arrange
+        UUID updatedId = UUID.randomUUID();
+        UUID otherActiveId = UUID.randomUUID();
+        PhonebookEntry updatedEntry = new PhonebookEntry();
+        updatedEntry.setId(updatedId);
+        PhonebookEntry ownerEntry = new PhonebookEntry();
+        ownerEntry.setId(otherActiveId);
+        PhonebookEntryRequest request = new PhonebookEntryRequest();
+        request.setActivatedDate(LocalDate.of(2026,1,1));
+        request.setNumber("0501234567");
+
+        when(phonebookRepository.findById(updatedId))
+                .thenReturn(Optional.of(updatedEntry));
+        when(phonebookRepository.findByNumberAndActiveTrue("0501234567"))
+                .thenReturn(List.of(ownerEntry));
+
+
+        //Act +  Assert
+        assertThatThrownBy(()-> service.update(updatedId,request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining(otherActiveId.toString());
+        verify(phonebookRepository,never()).save(any());
+    }
+
+    @Test
+    void update_whenSaveViolatesUniqueIndex_throwsConflictException(){
+       //Arrange
+        UUID id = UUID.randomUUID();
+        PhonebookEntry entry = new PhonebookEntry();
+        entry.setId(id);
+        PhonebookEntryRequest request = new PhonebookEntryRequest();
+        request.setNumber("0501234567");
+
+
+        when(phonebookRepository.findById(id)).thenReturn(Optional.of(entry));
+        when(phonebookRepository.save(any())).thenThrow(DataIntegrityViolationException.class);
+
+        //Act + Assert
+        assertThatThrownBy(() ->service.update(id,request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining(request.getNumber());
 
 
 
 
     }
 
+
+    //===============================Success Cases=========================================
+    @Test
+    void update_whenOnlyActiveEntryIsItself_saves(){
+        //Arrange
+        UUID id = UUID.randomUUID();
+        PhonebookEntry entry = new PhonebookEntry();
+        entry.setId(id);
+        PhonebookEntryRequest request = new PhonebookEntryRequest();
+        request.setNumber("0501234567");
+        request.setActivatedDate(LocalDate.of(2026,1,1));
+
+
+
+        when(phonebookRepository.findById(id)).thenReturn(Optional.of(entry));
+        when(phonebookRepository.findByNumberAndActiveTrue("0501234567")).thenReturn(List.of(entry));
+
+        //Act
+        service.update(id,request);
+
+        //Assert
+        ArgumentCaptor<PhonebookEntry> captor = ArgumentCaptor.forClass(PhonebookEntry.class);
+        verify(phonebookRepository).save(captor.capture());
+        assertThat(captor.getValue().isActive()).isTrue();
+        assertThat(captor.getValue()).isSameAs(entry);
+
+    }
+
+    @Test
+    void update_whenStopingActiveEntry_updateEntryStatus(){
+        //Arrange
+        UUID id = UUID.randomUUID();
+        PhonebookEntry entry = new PhonebookEntry();
+        entry.setId(id);
+
+        PhonebookEntryResponse response = new PhonebookEntryResponse();
+
+        PhonebookEntryRequest request = new PhonebookEntryRequest();
+        request.setNumber("0501234567");
+        request.setActivatedDate(LocalDate.of(2025,1,1));
+        request.setStopDate(LocalDate.of(2026,1,1));
+
+        when(phonebookRepository.findById(id)).thenReturn(Optional.of(entry));
+        when(phonebookRepository.save(entry)).thenReturn(entry);
+        when(mapper.toResponse(entry)).thenReturn(response);
+
+        //Act
+        PhonebookEntryResponse result = service.update(id, request);
+
+        //Assert
+        ArgumentCaptor<PhonebookEntry> captor = ArgumentCaptor.forClass(PhonebookEntry.class);
+        verify(phonebookRepository).save(captor.capture());
+        assertThat(captor.getValue().isActive()).isFalse();
+        assertThat(captor.getValue()).isSameAs(entry);
+        verify(phonebookRepository,never()).findByNumberAndActiveTrue(any());
+        verify(mapper).updateEntityFromRequest(request,entry);
+        assertThat(result).isSameAs(response);
+    }
 
 
 }
