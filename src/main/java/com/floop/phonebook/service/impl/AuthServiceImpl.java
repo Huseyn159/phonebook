@@ -29,8 +29,6 @@ public class AuthServiceImpl implements AuthService {
         this.authenticationManager = authenticationManager;
     }
 
-    private static final String INVALID_CREDENTIALS = "Invalid username or password";
-
     @Override
     public String register(RegisterRequest request) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
