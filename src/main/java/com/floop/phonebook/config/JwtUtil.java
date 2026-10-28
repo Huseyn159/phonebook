@@ -23,14 +23,11 @@ public class JwtUtil {
     private long expiration;
 
     public String generateToken(String username) {
-
-        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(key)
+                .signWith(getSigningKey())
                 .compact();
 
     }
@@ -47,30 +44,24 @@ public class JwtUtil {
     }
 
 
-
     public boolean validateToken(String token) {
         try {
 
-                Jwts.parser()
-                        .verifyWith(getSigningKey())
-                        .build()
-                        .parseSignedClaims(token);
-                return true;
-        }
-        catch (JwtException | IllegalArgumentException e) {
+            Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
 
     }
 
 
-
-
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
-
-
 
 
 }

@@ -423,8 +423,8 @@ class PhonebookServiceImplTest {
         when(specificationBuilder.buildAll(any(SearchRequest.class)))
                 .thenReturn(Specification.unrestricted());
 
-        //Act
 
+        //Act
         byte[] result = service.export(new SearchRequest());
 
 
