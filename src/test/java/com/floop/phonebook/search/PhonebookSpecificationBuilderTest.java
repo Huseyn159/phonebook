@@ -1,22 +1,43 @@
 package com.floop.phonebook.search;
 
 import com.floop.phonebook.dto.SearchCriteria;
+import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.exception.BadRequestException;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doReturn;
 
+@ExtendWith(MockitoExtension.class)
 class PhonebookSpecificationBuilderTest {
 
 
     private PhonebookSpecificationBuilder specificationBuilder;
 
+    @Mock private Root<PhonebookEntry> root;
+    @Mock private CriteriaQuery<?> query;
+    @Mock private CriteriaBuilder cb;
+    @Mock private Path<Object> path;
+
+    private void fieldType(String field,Class<?> type){
+        doReturn(path).when(root).get(field);
+        doReturn(type).when(path).getJavaType();
+    }
 
     @BeforeEach
     void setUp() {
@@ -86,6 +107,89 @@ class PhonebookSpecificationBuilderTest {
         List<SearchCriteria> criteriaList = null;
 
         assertThat(specificationBuilder.buildAll(criteriaList)).isNotNull();
+    }
+
+    @Test
+    void toPredicate_whenBetweenWithOneValueList_throwsBadRequest(){
+        fieldType("activatedDate", LocalDate.class);
+        SearchCriteria criteria = criteria("activatedDate",SearchOperation.BETWEEN,List.of("2026-01-01"));
+
+        Specification<PhonebookEntry> spec
+                = specificationBuilder.build(criteria);
+
+
+        assertThatThrownBy(()->spec.toPredicate(root,query,cb)).isInstanceOf(BadRequestException.class).hasMessageContaining("exactly 2 values");
+    }
+
+    @Test
+    void toPredicate_whenRangeOperatorWithInvalidValue_throwsBadRequest(){
+        fieldType("activatedDate",LocalDate.class);
+        SearchCriteria criteria = criteria("activatedDate",SearchOperation.GREATER_THAN,"abc");
+
+        Specification<PhonebookEntry> spec =
+                specificationBuilder.build(criteria);
+
+        assertThatThrownBy(()->spec.toPredicate(root,query,cb))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Invalid value");
+    }
+
+    @Test
+    void toPredicate_whenMatchWithInvalidField_throwsBadRequest(){
+        fieldType("activatedDate",LocalDate.class);
+        SearchCriteria criteria = criteria("activatedDate",SearchOperation.MATCH,"abc");
+        Specification<PhonebookEntry> spec =
+                specificationBuilder.build(criteria);
+
+        assertThatThrownBy(()->spec.toPredicate(root,query,cb))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("only supported for text fields");
+    }
+
+    @Test
+    void toPredicate_whenMatchWithIntegerValue_throwsBadRequest(){
+        fieldType("name", String.class);
+        SearchCriteria criteria = criteria("name",SearchOperation.MATCH,123);
+        Specification<PhonebookEntry> spec =
+                specificationBuilder.build(criteria);
+
+        assertThatThrownBy(()->spec.toPredicate(root,query,cb))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("require a text value");
+    }
+
+    @Test
+    void toPredicate_whenLastDayWithNullStringField_throwsBadRequest(){
+        fieldType("name",String.class);
+        SearchCriteria criteria = criteria("name",SearchOperation.LAST_DAY,null);
+        Specification<PhonebookEntry> spec =
+                specificationBuilder.build(criteria);
+
+        assertThatThrownBy(()->spec.toPredicate(root,query,cb))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("only supported for date fields");
+    }
+
+    @Test
+    void toPredicate_whenLastHourWithLocalDateField_throwsBadRequest(){
+        fieldType("activatedDate", LocalDate.class);
+        SearchCriteria criteria = criteria("activatedDate",SearchOperation.LAST_HOUR,"2026-01-01");
+        Specification<PhonebookEntry> spec =
+                specificationBuilder.build(criteria);
+
+        assertThatThrownBy(()->spec.toPredicate(root,query,cb))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("LAST_HOUR and LAST_MINUTE are only supported for LocalDateTime");
+    }
+
+    @Test
+    void toPredicate_whenLastHourOnDateTimeField_doesNotThrowException(){
+        fieldType("createdAt",LocalDateTime.class);
+        SearchCriteria criteria = criteria("createdAt",SearchOperation.LAST_HOUR,null);
+        Specification<PhonebookEntry> spec =
+                 specificationBuilder.build(criteria);
+
+        assertThatNoException().isThrownBy(()->spec.toPredicate(root,query,cb));
     }
 
 }

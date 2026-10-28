@@ -24,27 +24,6 @@ public class PhonebookSpecificationBuilder {
             SearchOperation.LAST_MINUTE, SearchOperation.LAST_HOUR, SearchOperation.LAST_DAY,
             SearchOperation.LAST_WEEK, SearchOperation.LAST_MONTH);
 
-    private void validateDateTimeField(String field){
-
-        if(!(field.equals("createdAt") || field.equals("updatedAt"))){
-            throw new BadRequestException("LAST_HOUR and LAST_MINUTE are only supported for createdAt and updatedAt fields.This -> " + field +" field is ot supported");
-
-        }
-    }
-
-    private List<?> toList(Object value) {
-        List<?> list;
-        if (value instanceof List<?> l) {
-            list = l;
-        } else {
-            list = List.of(value);
-        }
-        if (list.isEmpty()) {
-            throw new BadRequestException("At least one value is required");
-        }
-        return list;
-    }
-
     public Specification<PhonebookEntry> buildAll(List<SearchCriteria> criteriaList) {
         Specification<PhonebookEntry> result = Specification.unrestricted();
         if (criteriaList == null) {
@@ -177,12 +156,12 @@ public class PhonebookSpecificationBuilder {
                     return cb.greaterThanOrEqualTo(root.get(field), dateFrom(lastDay,type));
 
                 case LAST_HOUR:
-                    validateDateTimeField(field);
+                    validateDateTimeField(type);
                     LocalDateTime lastHour = LocalDateTime.now().minusHours(1);
                     return cb.greaterThanOrEqualTo(root.get(field), lastHour);
 
                 case LAST_MINUTE:
-                    validateDateTimeField(field);
+                    validateDateTimeField(type);
                     LocalDateTime lastMinute = LocalDateTime.now().minusMinutes(1);
                     return cb.greaterThanOrEqualTo(root.get(field), lastMinute);
 
@@ -264,4 +243,25 @@ public class PhonebookSpecificationBuilder {
         }
         return result;
     }
+
+
+    private void validateDateTimeField(Class<?> type){
+        if (type != LocalDateTime.class){
+            throw new BadRequestException("LAST_HOUR and LAST_MINUTE are only supported for LocalDateTime type fields.You provided -> " + type.getSimpleName() + " type field");
+        }
+    }
+
+    private List<?> toList(Object value) {
+        List<?> list;
+        if (value instanceof List<?> l) {
+            list = l;
+        } else {
+            list = List.of(value);
+        }
+        if (list.isEmpty()) {
+            throw new BadRequestException("At least one value is required");
+        }
+        return list;
+    }
+
 }
