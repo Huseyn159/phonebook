@@ -36,7 +36,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -118,7 +117,7 @@ public class EsServiceImpl implements EsService {
         }
         catch (ElasticsearchException e) {
             if (e.status() == 404) {
-                throw new ResourceNotFoundException(resultSet.getId());
+                throw   new ResourceNotFoundException("Result set not found: " + resultSet.getId());
             }
             throw e;
         }
@@ -258,7 +257,7 @@ public class EsServiceImpl implements EsService {
 
     private PhonebookResultSet loadUsableResultSet(UUID id){
         PhonebookResultSet resultSet = resultSetRepository.findById(id)
-                .orElseThrow(() ->new ResourceNotFoundException(id));
+                .orElseThrow(() ->  new ResourceNotFoundException("Result set not found: " + id));
 
         if (resultSet.getType()!=ResultSetType.SEARCH){
             throw new BadRequestException("Result set " + id + " is not a search result set");
@@ -266,7 +265,7 @@ public class EsServiceImpl implements EsService {
 
         if (resultSet.getExpirationTime() != null
                  && resultSet.getExpirationTime().isBefore(LocalDateTime.now())){
-            throw new ResourceNotFoundException(id);
+            throw  new ResourceNotFoundException("Result set not found: " + id);
         }
 
         if (resultSet.getStatus()!=ResultSetStatus.COMPLETED){

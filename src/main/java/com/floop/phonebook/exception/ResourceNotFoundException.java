@@ -6,4 +6,7 @@ public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(UUID id) {
         super("Phonebook entry not found: " + id);
     }
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
 }
