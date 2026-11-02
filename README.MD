@@ -8,9 +8,10 @@ CRUD + Excel import/export + JWT auth + dinamik axtarish + arxa plan import + re
 - Elasticsearch 8.x ishe sal (lokal, Docker ile), meselen:
   `docker run -d -p 9200:9200 -e "discovery.type=single-node" -e "xpack.security.enabled=false" docker.elastic.co/elasticsearch/elasticsearch:8.15.0`
 - `application.properties`-de DB user/password oz muhitine uygunlasdir
-- Environment variable-lar teyin et: `JWT_SECRET`, `MAIL_USERNAME`, `MAIL_PASSWORD` (Gmail App Password)
+- Environment variable-lar teyin et: `JWT_SECRET` (en azi 32 simvol), `MAIL_USERNAME`, `MAIL_PASSWORD` (Gmail App Password)
 - `./mvnw spring-boot:run`
-- Swagger: http://localhost:8080/swagger-ui.html (Authorize ile Bearer token elave et)
+- Swagger: http://localhost:8080/swagger-ui.html (login-den alinan token-i "Authorize" duymesi ile elave et)
+- Testler: `./mvnw test`
 
 ## Endpoint-ler
 
@@ -18,12 +19,12 @@ CRUD + Excel import/export + JWT auth + dinamik axtarish + arxa plan import + re
 |--------|------|---------|
 | POST   | /api/v1/auth/register | Qeydiyyat |
 | POST   | /api/v1/auth/login | Login, JWT token qaytarir |
-| POST   | /api/v1/phonebook | Yeni yazi |
+| POST   | /api/v1/phonebook | Yeni yazi (201) |
 | GET    | /api/v1/phonebook/{id} | Bir yazini getir |
 | PUT    | /api/v1/phonebook/{id} | Yazini deyis (stopDate qoymaq/silmek daxil) |
-| DELETE | /api/v1/phonebook/{id} | Yazini sil |
+| DELETE | /api/v1/phonebook/{id} | Yazini sil (204) |
 | POST   | /api/v1/phonebook/import | Excel (.xlsx) ile toplu create/update (sync) |
-| POST   | /api/v1/phonebook/import/async | Eyni, amma arxa planda (boyuk fayllar ucun) |
+| POST   | /api/v1/phonebook/import/async | Eyni, amma arxa planda (202 Accepted, boyuk fayllar ucun) |
 | GET    | /api/v1/result-set/{id} | Arxa plan isinin veziyyeti (polling) |
 | POST   | /api/v1/phonebook/search | Kriteriyali, sehifelenmis axtaris (PostgreSQL) |
 | POST   | /api/v1/phonebook/export | Kriteriyali axtarishin neticesini .xlsx kimi endir |
@@ -34,7 +35,8 @@ CRUD + Excel import/export + JWT auth + dinamik axtarish + arxa plan import + re
 
 - `active` saheni sistem ozu hesablayir: `stopDate` bosdursa aktiv, doludursa deyil
 - Eyni nomreye eyni anda yalniz bir aktiv yazi ola biler, yoxsa 400
-- Dayandirilmis nomrenin yeni yazisi, kohnenin bitme tarixinden evvel basalaya bilmez
+- Bu qayda iki qatda qorunur: servisde yoxlanilir (aydin mesaj, 400) ve DB-de partial unique index var (`number WHERE active = true`). Eyni anda gelen iki sorgu servis yoxlamasindan birlikde kecse, DB ikincini redd edir ve cavab 409 Conflict olur
+- Dayandirilmis nomrenin yeni yazisi, kohnenin bitme tarixinden evvel baslaya bilmez
 - Uzunluq limiti asilsa -> 400, olmayan id -> 404
 
 ## Excel import (Task 2)
@@ -42,15 +44,17 @@ CRUD + Excel import/export + JWT auth + dinamik axtarish + arxa plan import + re
 Endpoint: `POST /api/v1/phonebook/import` (multipart/form-data, sahe adi: `file`)
 
 - Capitalize qaydasi: her sozun ilk herfi boyuk, qalani kicik (Title Case) - `name`, `surname`, `city`-e tetbiq olunur
-- Create/Update ayrimi: `number` + `activatedDate` cutluyune gore DB-de axtarilir - tapilirsa update, tapilmirsa yeni yazi
-- Her setir, Task 1-deki eyni qaydalarla yoxlanilir; bir setir ugursuz olsa, digerleri davam edir, xetalar `errors` massivinde
-- Bos/oxuna bilmeyen fayl -> 400
+- Create/Update ayrimi: `number` + `activatedDate` cutluyune gore DB-de axtarilir - tapilirsa update, tapilmirsa yeni yazi. Ona gore eyni fayli tekrar yuklemek dublikat yaratmir
+- Tarix xanalari hem Excel tarix formatinda, hem de `yyyy-MM-dd` metni kimi qebul olunur; yanlis formatda sahe adi ve setir nomresi ile xeta qaytarilir
+- Her setir, Task 1-deki eyni qaydalarla yoxlanilir; bir setir ugursuz olsa, digerleri davam edir, xetalar `errors` massivinde (setir nomresi Excel-de gorunen nomredir)
+- Tamamile bos setirler oturulur
+- Bos/oxuna bilmeyen fayl (Excel olmayan mezmun) -> 400
 
 ## JWT Authentication
 
 - Register: `username`+`password`+`email` (password: min 8 simvol, boyuk/kicik herf, reqem, xususi simvol)
-- Login: dogru olarsa, JWT token qaytarir (24 saat etibarli)
-- Qorunan endpoint-lere, `Authorization: Bearer <token>` basligi ile sorgu gonderilir
+- Login: dogru olarsa, JWT token qaytarir (24 saat etibarli). Yanlis istifadeci adi ve yanlis parol eyni cavabi alir (401, "Invalid username or password"), ki movcud istifadeci adlari bilinmesin
+- Qorunan endpoint-lere, `Authorization: Bearer <token>` basligi ile sorgu gonderilir; token yoxdursa ve ya etibarsizdirsa -> 401
 - `/api/v1/auth/**`, `/ws/**` ve Swagger, acigdir; qalan hersey, token teleb edir
 - Sifreler, BCrypt ile hash olunur, hec vaxt aciq metnde saxlanmir
 
@@ -63,9 +67,11 @@ Body: `{ "criteria": [ { "key": "city", "value": "Baku", "operation": "EQUAL" } 
 - Bos `criteria` -> butun yazilar, sehifelenmis sekilde qaytarilir
 - Butun kriteriyalar arasinda **AND** tetbiq olunur (OR desteklenmir)
 - `value`, tek deyer (string/reqem) ve ya array ola biler (operation-a gore); `IN`/`NOT_IN`-de tek deyer, tek elementli array kimi qebul olunur
-- Deyerlerin acig sahe siyahisi ile yoxlanilir, uygun olmayan `key` -> 400 (boyuk/kicik herfe hessas deyil)
+- Deyer sahenin tipine cevrilir (tarix, tarix-vaxt, boolean); cevrilmeyen deyer -> 400
+- Sahe adlari (`key`) acig sahe siyahisi ile yoxlanilir, uygun olmayan `key` -> 400 (boyuk/kicik herfe hessas deyil)
+- `MATCH`/`MATCH_START`/`MATCH_END` ve `NOT_*` variantlari yalniz metn sahelerinde ve metn deyerle isleyir, yoxsa -> 400
 - `IS_MEMBER`, `ANY_OF` enum-da var, amma phonebook-da kolleksiya tipli sahe olmadigi ucun istifade olunmur
-- `LAST_HOUR`/`LAST_MINUTE`, yalniz `createdAt`/`updatedAt` (datetime) sahelerine tetbiq oluna biler; `LAST_DAY`/`LAST_WEEK`/`LAST_MONTH`, hem date, hem datetime sahelerinde islenir
+- `LAST_HOUR`/`LAST_MINUTE`, yalniz tarix-vaxt (`LocalDateTime`) tipli sahelere tetbiq oluna biler (hazirda `createdAt`, `updatedAt`); `LAST_DAY`/`LAST_WEEK`/`LAST_MONTH`, hem date, hem datetime sahelerinde islenir
 - `BETWEEN`, tam olaraq 2 elementli array teleb edir, eksik/artiq olarsa -> 400
 - Icazeli sahelerin siyahisi `PhonebookFields`-dedir; Elasticsearch axtarisi (Task 7) da eyni siyahidan istifade edir
 
@@ -73,31 +79,32 @@ Body: `{ "criteria": [ { "key": "city", "value": "Baku", "operation": "EQUAL" } 
 
 Endpoint: `POST /api/v1/phonebook/export` (Task 3-deki eyni `SearchRequest` body-si)
 
-- Ayni `SpecificationBuilder`-den istifade olunur, axtaris ve export eyni netice setini qaytarir
+- Eyni `SpecificationBuilder`-den istifade olunur, axtaris ve export eyni netice setini qaytarir
 - Sync export, cap ile mehdudlasdirilib (50 000 setir)
 - Butun entity saheleri (id, active, createdAt, updatedAt daxil) sutun kimi yazilir; `null` deyerler bos xana kimi yazilir
 - Tarix/vaxt saheleri, metn (String) formatinda yazilir, Excel-in oz tarix formatinda deyil
 
 ## Distinct field values (Task 5)
 
-Endpoint: `POST /api/v1/phonebook/fields?field=city&searchValue=&page=0&size=20` (Task 3-deki eyni `SearchRequest` body-si, kohtenli)
+Endpoint: `POST /api/v1/phonebook/fields?field=city&searchValue=&page=0&size=20` (Task 3-deki eyni `SearchRequest` body-si, konullu)
 
 - Whitelist: `name, surname, nationalId, fin, address, city, number, active`
 - `searchValue`, "contains" axtarishi kimi ishleyir (`LIKE %value%`)
-- `null` deyerler, netice siyahisindan cixarilir
+- `null` deyerler, netice siyahisindan cixarilir; netice elifba sirasi ile qaytarilir
 - Repository/Specification `SELECT DISTINCT`-i desteklemedigi ucun, `EntityManager` (raw JPA Criteria API) ile qurulub; data ve cemi say ucun iki ayrica sorgu ishledilir
 
 ## Boyuk Excel import, arxa planda (Task 6)
 
 Endpoint: `POST /api/v1/phonebook/import/async` (eyni form-data format, sync import ile)
 
-- Sorgu, fayli diske saxlayir, `phonebook_result_set` setri (`IN_PROGRESS`) yaradir, `resultSetId`-ni derhal qaytarir (~1 san.)
-- Faktiki import, arxa planda (`@Async`) gedir; 20 000 setir ucun ~20-25 saniye
+- Sorgu, fayli diske saxlayir, `phonebook_result_set` setri (`IN_PROGRESS`) yaradir, `resultSetId`-ni derhal qaytarir (202 Accepted, ~1 san.)
+- Faktiki import, arxa planda (`@Async`) gedir; 20 000 setir ucun ~20-25 saniye. Is bitende yuklenmis fayl diskden silinir
 - Bitende, `phonebook_result_set` setri `COMPLETED`/`FAILED` olur, sayilar (`totalRows`, `createdCount`, `updatedCount`, `failedCount`) yazilir
 - Ireliye getme usullari:
   - **Polling**: `GET /api/v1/result-set/{resultSetId}`
-  - **WebSocket**: STOMP, `/ws` endpoint, `/topic/result-set/{resultSetId}` kanalina abune olunur, proses bitende tam `PhonebookResultSet` push olunur
+  - **WebSocket**: STOMP, `/ws` endpoint, `/topic/result-set/{resultSetId}` kanalina abune olunur, proses bitende netice push olunur
   - **Email**: istifadecinin `email`-i varsa (register-de qeyd olunubsa), bitende netice email-le gonderilir; email yoxdursa, bu addim sessizce atlanir
+- Polling ve WebSocket eyni `ResultSetResponse` DTO-sunu qaytarir: daxili saheler (serverdeki fayl yolu, Elasticsearch indeks adi, `criteriaJson`) istifadeciye gonderilmir
 - `phonebook_result_set`, generic cedveldir (`type` sutunu ile): `IMPORT` (Task 6) ve `SEARCH` (Task 7) eyni cedveli istifade edir
 
 ## Elasticsearch snapshot axtarisi (Task 7)
@@ -110,6 +117,7 @@ Body: `{ "resultSetId": null, "criteria": [ { "key": "city", "value": "Baku", "o
 
 - PostgreSQL esas melumat menbeyi olaraq qalir (create/update/import orada gedir); Elasticsearch yalniz muveqqeti, suretli axtaris gorunusudur
 - Agir filtri her sehife klikinde tekrar isletmek evezine, onu bir defe PostgreSQL-de isledirik ve neticeni Elasticsearch-e kocururuk ("snapshot"). Sonraki sehifeleme ve daraltma yalniz snapshot-dan oxuyur
+- Snapshot "o anin sekli"dir: butun sehifeler eyni netice setinden gelir, sehifeler arasinda DB-ye yeni yazi elave olunsa da setirler tekrarlanmir ve itmir
 
 ### Nece isleyir
 
@@ -171,13 +179,29 @@ Diger operatorlar (`NOT_*`, `LAST_*` ve s.) snapshot daxilinde desteklenmir -> 4
 
 ### Melum mehdudiyyetler
 
-- Her `resultSetId`-siz sorgu yeni snapshot ve yeni indeks yaradir (eyni filtr ucun movcud olan yeniden istifade olunmur). Bu bilerekdir: tapshiriq bunu teleb edir, snapshot "o anin sekli"dir ve yeni axtaris cari melumati gostermelidir; kohne snapshot-i paylasmaq kohne neticeni sessizce qaytara biler, `resultSetId`-nin ise sahibi yoxdur. Gelecekde optimallasdirma lazim olsa: `criteriaHash` + `createdBy` saxlayib, yalniz eyni istifadecinin, eyni filtrli ve yeni (meselen 5-10 deq.-den az) snapshot-ini yeniden istifade etmek olar
-- Snapshot ən çox max-snapshot-rows sətirdir. Filtr bundan çox nəticə tapsa, ən yeni (createdAt azalan, sonra id) sətirlər snapshot-a düşür və cavabda truncated: true qaytarılır. Bu bayraq snapshot ilə birlikdə phonebook_result_set.truncated sütununda saxlanır, ona görə resultSetId ilə sonrakı səhifələrdə də düzgün qaytarılır.
-- `from + size` 10 000-den cox ola bilmez (`search_after` yoxdur)
+- Snapshot en cox `max-snapshot-rows` setirdir. Filtr bundan cox netice tapsa, en yeni (`createdAt` azalan, sonra `id`) setirler snapshot-a dusur ve cavabda `truncated: true` qaytarilir. Bu bayraq `phonebook_result_set.truncated` sutununda saxlanir, ona gore `resultSetId` ile sonraki sehifelerde de duzgun qaytarilir
+- `from + size` 10 000-den cox ola bilmez (`search_after` yoxdur). Limiti qaldirmaq ucun plan: snapshot-i PostgreSQL-den hisse-hisse oxuyub bulk ile yazmaq ve sehifelemeni `search_after` (kursor) ile etmek
 - `MATCH` soz esaslidir, soz daxilinde hisse axtarisi (`LIKE '%li%'` kimi) etmir; bunun ucun PostgreSQL axtarisi (`/search`) istifade olunur
 - `resultSetId` sahibsizdir: sisteme daxil olmus istifadeci, bildiyi istenilen `resultSetId` ile snapshot-i oxuya biler
 - Yanlis `criteria` ile yeni axtarishda yaradilmis `result_set` setri `FAILED` qalir (`error_summary` ile) ve muddeti bitende temizlenir
-- Tutulmayan xetalar (meselen Elasticsearch-in icra ede bilmediyi sorgu) 500 evezine 403 kimi gorsene biler; sebebi, ehtimal ki, Spring-in daxili `/error` yonlendirmesidir ve hele hell edilmeyib
+
+## Xeta idaresi
+
+- Butun xetalar `GlobalExceptionHandler`-de vahid `ErrorResponse` formatina cevrilir: 400 (yanlis giris, biznes qaydasi), 401 (token yoxdur/etibarsizdir, yanlis login), 404, 409, gozlenilmeyen xetalar 500
+- Evveller tutulmayan xetalar Spring-in daxili `/error` yonlendirmesi sebebinden 403 kimi gorunurdu. Duzeldilib: `/error` yonlendirmesi aciqdir ve token-siz sorgu 401 alir, ona gore her xeta oz real status kodu ile qaytarilir
+
+## Testler
+
+- 70 unit test (JUnit 5, Mockito, AssertJ): `./mvnw test`
+- Yoxlanilir: aktiv nomre ve tarix qaydalari, 409 cevrilmesi, JWT (vaxti bitmis, deyisdirilmis, basqa acarla imzalanmis token), PostgreSQL ve Elasticsearch sorgu qurucularinin yoxlamalari, snapshot result set-in veziyyetleri, Excel import (tarix ve metn xanalari, yanlis format, bos setir, update)
+- Unit testler DB, HTTP ve Elasticsearch-i yoxlamir. Novbeti addim: Testcontainers ile real PostgreSQL (partial index, Specification) ve Elasticsearch, `@WebMvcTest` ile status kodlari
+
+## Umumi melum mehdudiyyetler
+
+- Server import-un ortasinda dayansa, result set `IN_PROGRESS` veziyyetinde qalir ve fayl diskde qalir. Import idempotent oldugu ucun eyni fayli yeniden yuklemek tehlukesizdir
+- PostgreSQL axtarisinda `MATCH` boyuk/kicik herfe hessasdir (`ali` `Ali`-ni tapmir); capitalize yalniz import zamani tetbiq olunur
+- JWT 24 saatdir, refresh token ve token-i legv etmek imkani yoxdur
+- Import her setir ucun bir nece SQL sorgusu isledir; cox boyuk fayllar ucun batch insert ile suretlendirmek olar
 
 ## Delete
 
