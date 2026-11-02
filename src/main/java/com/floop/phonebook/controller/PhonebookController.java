@@ -5,7 +5,10 @@ import com.floop.phonebook.dto.*;
 import com.floop.phonebook.entity.PhonebookResultSet;
 import com.floop.phonebook.service.ImportProcessingService;
 import com.floop.phonebook.service.PhonebookService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
@@ -20,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+
+@Tag(name = "Phonebook")
 @RestController
 @RequestMapping("/api/v1/phonebook")
 public class PhonebookController {
@@ -27,19 +32,19 @@ public class PhonebookController {
     private final PhonebookService phonebookService;
     private final ImportProcessingService importProcessingService;
 
-
     public PhonebookController(PhonebookService phonebookService, ImportProcessingService importProcessingService) {
         this.phonebookService = phonebookService;
-
         this.importProcessingService = importProcessingService;
     }
 
+    @Operation(summary = "Create an entry")
     @PostMapping
     public ResponseEntity<PhonebookEntryResponse> create(@Valid @RequestBody PhonebookEntryRequest request) {
         PhonebookEntryResponse response = phonebookService.create(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Update an entry")
     @PutMapping("/{id}")
     public ResponseEntity<PhonebookEntryResponse> update(@PathVariable UUID id,
                                                          @Valid @RequestBody PhonebookEntryRequest request) {
@@ -47,31 +52,46 @@ public class PhonebookController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Get an entry by id")
     @GetMapping("/{id}")
     public ResponseEntity<PhonebookEntryResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(phonebookService.getById(id));
     }
 
+    @Operation(summary = "Delete an entry")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         phonebookService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/import")
-    public ResponseEntity<ImportResponse> importFile(@RequestParam("file") MultipartFile file) {
+    @Operation(summary = "Import an Excel file synchronously")
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ImportResponse> importFile(@RequestPart("file") MultipartFile file) {
         ImportResponse response = importProcessingService.importFile(file);
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Start an asynchronous Excel import",
+            description = "Returns a resultSetId immediately. Track progress via the result set endpoint.")
+    @PostMapping(value = "/import/async", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ImportAsyncResponse> importAsync(@RequestPart("file") MultipartFile file) throws IOException {
+        PhonebookResultSet resultSet = importProcessingService.importAsync(file);
 
+        ImportAsyncResponse response = new ImportAsyncResponse();
+        response.setResultSetId(resultSet.getId());
+        response.setStatus(resultSet.getStatus());
+        return ResponseEntity.accepted().body(response);
+    }
+
+    @Operation(summary = "Search entries in PostgreSQL")
     @PostMapping("/search")
-    public Page<PhonebookEntryResponse> search(
-            @RequestBody SearchRequest searchRequest,
-            Pageable pageable) {
+    public Page<PhonebookEntryResponse> search(@RequestBody SearchRequest searchRequest,
+                                               @ParameterObject Pageable pageable) {
         return phonebookService.search(searchRequest, pageable);
     }
 
+    @Operation(summary = "Export matching entries to Excel")
     @PostMapping("/export")
     public ResponseEntity<byte[]> export(@RequestBody SearchRequest searchRequest) throws IOException {
         byte[] excelBytes = phonebookService.export(searchRequest);
@@ -82,26 +102,12 @@ public class PhonebookController {
                 .body(excelBytes);
     }
 
+    @Operation(summary = "List distinct values of a field")
     @PostMapping("/fields")
-    public Page<String> distinctValues(
-            @RequestParam String field,
-            @RequestParam(required = false) String searchValue,
-            @RequestBody(required = false) SearchRequest searchRequest,
-            Pageable pageable) {
+    public Page<String> distinctValues(@RequestParam String field,
+                                       @RequestParam(required = false) String searchValue,
+                                       @RequestBody(required = false) SearchRequest searchRequest,
+                                       @ParameterObject Pageable pageable) {
         return phonebookService.distinctValues(field, searchValue, searchRequest, pageable);
     }
-
-
-    @PostMapping("/import/async")
-    public ResponseEntity<ImportAsyncResponse> importAsync(@RequestParam("file") MultipartFile file) throws IOException {
-        PhonebookResultSet resultSet = importProcessingService.importAsync(file);  // phonebookService YOX, importProcessingService
-
-        ImportAsyncResponse response = new ImportAsyncResponse();
-        response.setResultSetId(resultSet.getId());
-        response.setStatus(resultSet.getStatus());
-        return ResponseEntity.ok(response);
-    }
-
-
-
 }
