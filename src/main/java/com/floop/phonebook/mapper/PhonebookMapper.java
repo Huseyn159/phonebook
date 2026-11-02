@@ -2,7 +2,9 @@ package com.floop.phonebook.mapper;
 
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.dto.PhonebookEntryResponse;
+import com.floop.phonebook.dto.ResultSetResponse;
 import com.floop.phonebook.entity.PhonebookEntry;
+import com.floop.phonebook.entity.PhonebookResultSet;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -23,4 +25,6 @@ public interface PhonebookMapper {
     void updateEntityFromRequest(PhonebookEntryRequest request, @MappingTarget PhonebookEntry entity);
 
     PhonebookEntryResponse toResponse(PhonebookEntry entity);
+
+    ResultSetResponse toResultSetResponse(PhonebookResultSet resultSet);
 }

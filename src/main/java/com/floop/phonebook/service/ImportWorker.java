@@ -5,6 +5,7 @@ import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.enums.ResultSetStatus;
 import com.floop.phonebook.enums.RowOutcome;
 import com.floop.phonebook.exception.BadRequestException;
+import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
 import jakarta.validation.ConstraintViolation;
@@ -37,17 +38,19 @@ public class ImportWorker {
     private final PhonebookResultSetRepository resultSetRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final EmailService emailService;
+    private final PhonebookMapper mapper;
 
     public ImportWorker(PhonebookService phonebookService,
                         PhonebookRepository phonebookRepository,
                         Validator validator,
-                        PhonebookResultSetRepository resultSetRepository, SimpMessagingTemplate messagingTemplate, EmailService emailService) {
+                        PhonebookResultSetRepository resultSetRepository, SimpMessagingTemplate messagingTemplate, EmailService emailService, PhonebookMapper mapper) {
         this.phonebookService = phonebookService;
         this.phonebookRepository = phonebookRepository;
         this.validator = validator;
         this.resultSetRepository = resultSetRepository;
         this.messagingTemplate = messagingTemplate;
         this.emailService = emailService;
+        this.mapper = mapper;
     }
 
     public ImportResponse processExcelStream(InputStream is) {
@@ -106,7 +109,7 @@ public class ImportWorker {
             resultSet.setErrorSummary(errorMessage);
         }
         resultSetRepository.save(resultSet);
-        messagingTemplate.convertAndSend("/topic/result-set/" + resultSetId, resultSet);
+        messagingTemplate.convertAndSend("/topic/result-set/" + resultSetId, mapper.toResultSetResponse(resultSet));
 
         if (email != null && !email.isBlank()) {
            try {

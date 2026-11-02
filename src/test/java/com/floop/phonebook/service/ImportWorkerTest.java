@@ -5,6 +5,7 @@ import com.floop.phonebook.dto.ImportResponse;
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.entity.PhonebookEntry;
 import com.floop.phonebook.exception.BadRequestException;
+import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
 import jakarta.validation.Validator;
@@ -43,6 +44,7 @@ class ImportWorkerTest {
     @Mock private  PhonebookResultSetRepository resultSetRepository;
     @Mock private  SimpMessagingTemplate messagingTemplate;
     @Mock private  EmailService emailService;
+    @Mock private PhonebookMapper mapper;
 
     @InjectMocks private ImportWorker worker;
 

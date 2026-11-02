@@ -1,7 +1,8 @@
 package com.floop.phonebook.controller;
 
+import com.floop.phonebook.dto.ResultSetResponse;
 import com.floop.phonebook.entity.PhonebookResultSet;
-import com.floop.phonebook.service.PhoneBookResultSetService;
+import com.floop.phonebook.service.PhonebookResultSetService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,15 +15,15 @@ import java.util.UUID;
 @RequestMapping("/api/v1/result-set")
 public class ResultSetController {
 
-    private final PhoneBookResultSetService resultSetService;
+    private final PhonebookResultSetService resultSetService;
 
-    public ResultSetController(PhoneBookResultSetService resultSetService) {
+    public ResultSetController(PhonebookResultSetService resultSetService) {
         this.resultSetService = resultSetService;
     }
 
 
     @GetMapping("/{id}")
-    public ResponseEntity<PhonebookResultSet> getResultSet(@PathVariable UUID id) {
+    public ResponseEntity<ResultSetResponse> getResultSet(@PathVariable UUID id) {
 
         return ResponseEntity.ok(resultSetService.getById(id));
     }

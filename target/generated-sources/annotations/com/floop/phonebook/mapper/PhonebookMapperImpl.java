@@ -2,13 +2,15 @@ package com.floop.phonebook.mapper;
 
 import com.floop.phonebook.dto.PhonebookEntryRequest;
 import com.floop.phonebook.dto.PhonebookEntryResponse;
+import com.floop.phonebook.dto.ResultSetResponse;
 import com.floop.phonebook.entity.PhonebookEntry;
+import com.floop.phonebook.entity.PhonebookResultSet;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-10-26T14:36:34+0400",
+    date = "2026-11-02T12:21:01+0400",
     comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.10 (Homebrew)"
 )
 @Component
@@ -78,5 +80,29 @@ public class PhonebookMapperImpl implements PhonebookMapper {
         phonebookEntryResponse.setUpdatedAt( entity.getUpdatedAt() );
 
         return phonebookEntryResponse;
+    }
+
+    @Override
+    public ResultSetResponse toResultSetResponse(PhonebookResultSet resultSet) {
+        if ( resultSet == null ) {
+            return null;
+        }
+
+        ResultSetResponse resultSetResponse = new ResultSetResponse();
+
+        resultSetResponse.setId( resultSet.getId() );
+        resultSetResponse.setType( resultSet.getType() );
+        resultSetResponse.setStatus( resultSet.getStatus() );
+        resultSetResponse.setTotalRows( resultSet.getTotalRows() );
+        resultSetResponse.setExpirationTime( resultSet.getExpirationTime() );
+        resultSetResponse.setUpdatedCount( resultSet.getUpdatedCount() );
+        resultSetResponse.setCreatedCount( resultSet.getCreatedCount() );
+        resultSetResponse.setFailedCount( resultSet.getFailedCount() );
+        resultSetResponse.setErrorSummary( resultSet.getErrorSummary() );
+        resultSetResponse.setCreatedAt( resultSet.getCreatedAt() );
+        resultSetResponse.setFinishedAt( resultSet.getFinishedAt() );
+        resultSetResponse.setTruncated( resultSet.isTruncated() );
+
+        return resultSetResponse;
     }
 }
