@@ -1,4 +1,4 @@
-package com.floop.phonebook.config;
+package com.floop.phonebook.security;
 
 import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;

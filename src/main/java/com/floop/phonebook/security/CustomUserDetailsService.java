@@ -1,4 +1,4 @@
-package com.floop.phonebook.service;
+package com.floop.phonebook.security;
 
 import com.floop.phonebook.entity.UserEntity;
 import com.floop.phonebook.repository.UserRepository;

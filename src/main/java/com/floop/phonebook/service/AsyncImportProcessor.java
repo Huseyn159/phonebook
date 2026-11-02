@@ -1,10 +1,7 @@
-package com.floop.phonebook.service.impl;
+package com.floop.phonebook.service;
 
 import com.floop.phonebook.dto.ImportResponse;
 import com.floop.phonebook.enums.ResultSetStatus;
-import com.floop.phonebook.service.ImportWorker;
-import com.floop.phonebook.service.PhonebookService;
-import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

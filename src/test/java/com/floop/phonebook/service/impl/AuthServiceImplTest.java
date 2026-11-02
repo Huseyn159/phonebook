@@ -1,6 +1,6 @@
 package com.floop.phonebook.service.impl;
 
-import com.floop.phonebook.config.JwtUtil;
+import com.floop.phonebook.security.JwtUtil;
 import com.floop.phonebook.dto.AuthResponse;
 import com.floop.phonebook.dto.LoginRequest;
 import com.floop.phonebook.dto.RegisterRequest;
@@ -22,7 +22,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 

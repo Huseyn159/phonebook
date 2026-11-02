@@ -1,7 +1,6 @@
 package com.floop.phonebook.service.impl;
 
 import com.floop.phonebook.entity.PhonebookResultSet;
-import com.floop.phonebook.exception.BadRequestException;
 import com.floop.phonebook.exception.ResourceNotFoundException;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
 import com.floop.phonebook.service.PhoneBookResultSetService;
@@ -10,11 +9,11 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
-public class PhoneBookResultSetServiceImpl implements PhoneBookResultSetService {
+public class PhonebookResultSetServiceImpl implements PhoneBookResultSetService {
 
     private final PhonebookResultSetRepository phonebookResultSetRepository;
 
-    public PhoneBookResultSetServiceImpl(PhonebookResultSetRepository phonebookResultSetRepository) {
+    public PhonebookResultSetServiceImpl(PhonebookResultSetRepository phonebookResultSetRepository) {
         this.phonebookResultSetRepository = phonebookResultSetRepository;
     }
 

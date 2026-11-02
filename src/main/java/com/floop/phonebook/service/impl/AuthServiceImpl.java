@@ -1,6 +1,6 @@
 package com.floop.phonebook.service.impl;
 
-import com.floop.phonebook.config.JwtUtil;
+import com.floop.phonebook.security.JwtUtil;
 import com.floop.phonebook.dto.AuthResponse;
 import com.floop.phonebook.dto.LoginRequest;
 import com.floop.phonebook.dto.RegisterRequest;

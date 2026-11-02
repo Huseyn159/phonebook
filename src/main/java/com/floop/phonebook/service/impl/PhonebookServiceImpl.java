@@ -32,7 +32,6 @@ import java.time.LocalDate;
 import java.util.*;
 
 @Service
-@EnableAsync
 public class PhonebookServiceImpl implements PhonebookService {
 
     private final PhonebookMapper mapper;
