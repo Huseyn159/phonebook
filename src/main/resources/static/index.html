@@ -30,6 +30,7 @@ button,input,select{font:inherit;color:inherit}
   #screen input:not([type=date]):not([type=file]){cursor:text}
 }
 button, label, select, .li{cursor:pointer}
+
 /* ---------- layout ---------- */
 .layout{height:100vh;display:grid;grid-template-columns:minmax(250px,330px) minmax(380px,1fr) minmax(380px,520px);gap:28px;padding:28px 32px}
 .story{align-self:center;max-width:320px}
@@ -151,6 +152,21 @@ input[type=date],input[type=datetime-local]{min-width:0;font-size:13px}
 .errlist{margin:6px 16px 90px}
 .errlist div{font-size:12.5px;padding:8px 10px;background:var(--err-soft);color:var(--err);border-radius:10px;margin-bottom:6px}
 
+/* error lab */
+.labintro{margin:0 16px 10px;font-size:12.5px;color:var(--muted);line-height:1.45}
+.lgrp{font:800 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#a0958a;margin:14px 20px 6px}
+.lab{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:0 16px 8px;transition:border-color .3s}
+.lab.hit{border-color:var(--ok)}.lab.miss{border-color:var(--warn)}
+.lab .lh{display:flex;align-items:center;gap:8px}
+.lab .lh b{font-size:14px;flex:1;min-width:0}
+.lab .exp{font:800 10.5px var(--mono);padding:3px 6px;border-radius:6px;background:var(--chip);color:var(--ink-2);flex:none}
+.lab p{margin:6px 0 9px;font-size:12.5px;color:var(--muted);line-height:1.42}
+.lab p code{font:600 11.5px var(--mono);color:var(--ink-2)}
+.lab .pbtn{margin:0;padding:9px;font-size:13px}
+.lres{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;margin-top:8px;line-height:1.4;word-break:break-word}
+.lres .code{flex:none;margin-top:1px}
+.lres .why{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+
 /* snapshot */
 .snapcard{margin:0 16px 10px;border-radius:16px;padding:14px;background:var(--ink);color:var(--paper);position:relative;overflow:hidden}
 .snapcard:after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:rgba(217,98,43,.35)}
@@ -208,6 +224,42 @@ input[type=date],input[type=datetime-local]{min-width:0;font-size:13px}
 .logempty{padding:30px 16px;color:var(--muted);font-size:13.5px;text-align:center}
 .logtoggle{display:none}
 
+/* ---------- request journey ---------- */
+.journey{margin:12px 14px 6px;padding:14px 12px 12px;background:#f7f3ee;border-radius:16px;flex:none}
+.jt{font:700 10.5px var(--mono);letter-spacing:.08em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;margin-bottom:12px;gap:8px}
+.jt b{color:var(--ink);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jtrack{position:relative;display:flex;justify-content:space-between;align-items:flex-start}
+.jtrack:before{content:"";position:absolute;left:30px;right:30px;top:17px;height:2px;background:#e4dcd2}
+.jn{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px;width:62px;text-align:center}
+.jn i{width:36px;height:36px;border-radius:12px;background:var(--card);border:1.5px solid #e4dcd2;display:grid;place-items:center;font-style:normal;font-size:15px;transition:background .2s,border-color .2s,transform .2s,box-shadow .2s}
+.jn span{font:650 10.5px system-ui,sans-serif;color:var(--ink-2);line-height:1.15}
+.jn.pass i{border-color:var(--ok);background:var(--ok-soft)}
+.jn.cur i{transform:scale(1.12);border-color:var(--accent);box-shadow:0 0 0 5px rgba(217,98,43,.15)}
+.jn.fail i{border-color:var(--err);background:var(--err-soft);transform:scale(1.1);box-shadow:0 0 0 5px rgba(184,64,42,.14)}
+.jn.ws i{border-color:var(--blue);background:#e3eaf5}
+.jdot{position:absolute;top:12px;left:26px;width:11px;height:11px;border-radius:50%;background:var(--accent);z-index:2;box-shadow:0 0 0 4px rgba(217,98,43,.2);transition:left .17s linear,background .2s,opacity .25s;opacity:0}
+.jdot.on{opacity:1}.jdot.ws{background:var(--blue);box-shadow:0 0 0 4px rgba(74,111,165,.22)}
+.jmsg{margin-top:10px;font-size:12.5px;color:var(--ink-2);min-height:18px}
+.jmsg.err{color:var(--err)}.jmsg.ok{color:var(--ok)}.jmsg.ws{color:var(--blue)}
+
+/* ---------- push notification, live island, frost ---------- */
+.push{position:absolute;top:48px;left:10px;right:10px;z-index:65;background:rgba(250,248,245,.97);backdrop-filter:blur(14px);border-radius:20px;padding:11px 13px;box-shadow:0 18px 40px rgba(0,0,0,.22);display:flex;gap:11px;transform:translateY(calc(-100% - 70px)) scale(.96);opacity:0;transition:transform .6s cubic-bezier(.2,1.3,.4,1),opacity .3s;border:0;text-align:left;width:auto}
+.push.show{transform:none;opacity:1}
+.push .ico{width:38px;height:38px;border-radius:10px;background:var(--ink);color:var(--bg1);display:grid;place-items:center;font-weight:800;flex:none}
+.push .pb{flex:1;min-width:0}
+.push .ph{display:flex;justify-content:space-between;font:700 10.5px var(--mono);color:var(--muted);letter-spacing:.05em}
+.push b{display:block;font-size:14.5px;margin:2px 0 1px}
+.push p{margin:0;font-size:13px;color:var(--ink-2)}
+.island .itext{position:absolute;left:16px;top:9px;font:700 10.5px var(--mono);color:#f4efe9;white-space:nowrap;opacity:0;transition:opacity .2s}
+.island.live{width:184px}
+.island.live .itext{opacity:1}
+.island.live .wave{opacity:1}
+#esList{position:relative}
+.frost:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;background:linear-gradient(110deg,transparent 25%,rgba(190,220,255,.6) 42%,rgba(255,255,255,.9) 50%,rgba(190,220,255,.6) 58%,transparent 75%);background-size:260% 100%;animation:frost 1.2s ease-out forwards}
+@keyframes frost{0%{background-position:130% 0}80%{opacity:1}100%{background-position:-70% 0;opacity:0}}
+.snapcard .ice{position:absolute;right:14px;top:12px;font:800 11px var(--mono);letter-spacing:.08em;z-index:1;background:rgba(255,255,255,.15);padding:3px 8px;border-radius:99px}
+.confetti{position:absolute;width:8px;height:12px;border-radius:2px;z-index:75;pointer-events:none}
+
 /* ---------- small screens: the phone becomes the app ---------- */
 @media (max-width:980px){
   .layout{grid-template-columns:1fr;padding:0;gap:0}
@@ -238,7 +290,7 @@ input[type=date],input[type=datetime-local]{min-width:0;font-size:13px}
   <div class="stage" id="stage">
     <div class="phone" id="phone">
       <div class="screen" id="screen">
-        <div class="island" id="island"><div class="wave"><i></i><i></i><i></i></div></div>
+        <div class="island" id="island"><span class="itext" id="itext"></span><div class="wave"><i></i><i></i><i></i></div></div>
         <div class="sbar"><span id="clock">9:41</span><span class="icons"><span>●●●</span><span>5G</span><span class="bat"></span></span></div>
 
         <!-- LOCK / LOGIN -->
@@ -312,6 +364,12 @@ input[type=date],input[type=datetime-local]{min-width:0;font-size:13px}
             </div>
           </section>
 
+          <!-- ERROR LAB -->
+          <section class="view hidden" data-view="lab">
+            <div class="vhead"><h2>Errors</h2></div>
+            <div class="scroll" id="labList"></div>
+          </section>
+
           <!-- SHEET: create / edit -->
           <div class="sheet" id="sheet">
             <div class="panel">
@@ -339,8 +397,10 @@ input[type=date],input[type=datetime-local]{min-width:0;font-size:13px}
           <button data-tab="filters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filters</button>
           <button data-tab="import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0l-5 5m5-5l5 5M4 20h16"/></svg>Import</button>
           <button data-tab="snapshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/></svg>Snapshot</button>
+          <button data-tab="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4.5M12 17.5v.5"/></svg>Errors</button>
         </nav>
 
+        <button class="push" id="push" type="button"><span class="ico">P</span><span class="pb"><span class="ph"><span>PHONEBOOK</span><span>now</span></span><b id="pushTitle"></b><p id="pushBody"></p></span></button>
         <div class="ptoast" id="ptoast"><span class="code" id="ptCode">200</span><span id="ptText"></span></div>
       </div>
     </div>
@@ -349,6 +409,18 @@ input[type=date],input[type=datetime-local]{min-width:0;font-size:13px}
   <aside class="logp" id="logp">
     <div class="logh"><b>API nə cavab verdi</b><button id="logClear">Təmizlə</button></div>
     <div class="logsub">Hər sorğu status kodu ilə. Sətrə klikləsən, göndərilən və qayıdan JSON açılır.</div>
+    <div class="journey" id="journey">
+      <div class="jt"><span>Sorğunun yolu</span><b id="jPath">—</b></div>
+      <div class="jtrack" id="jtrack">
+        <div class="jn"><i>📱</i><span>Telefon</span></div>
+        <div class="jn"><i>🔐</i><span>JWT Filter</span></div>
+        <div class="jn"><i>⇄</i><span>Controller</span></div>
+        <div class="jn"><i>⚙</i><span>Service</span></div>
+        <div class="jn"><i>🗄</i><span id="jData">DB</span></div>
+        <div class="jdot" id="jdot"></div>
+      </div>
+      <div class="jmsg" id="jmsg">Telefonda bir şey et, sorğunun qatlardan necə keçdiyini burada gör.</div>
+    </div>
     <div class="logs" id="logs"><div class="logempty">Hələ sorğu yoxdur. Telefonda nə etsən, burada görünəcək.</div></div>
   </aside>
 </div>
@@ -417,7 +489,12 @@ const STORY = {
   snapshot:{eyebrow:'Elasticsearch', title:'Nəticəni dondur, sonra daralt', text:[
     'İlk axtarış PostgreSQL-də bir dəfə işləyir və uyğun sətirlər yeni Elasticsearch indeksinə köçürülür. Bütün səhifələr bu dondurulmuş kopyadan oxunur, sətirlər təkrarlanmır və itmir.',
     'Result set id ilə əlavə şərtlər yalnız snapshot daxilində işləyir. Snapshot-u yalnız onu yaradan aça bilər, 30 gündən sonra avtomatik silinir.'],
-    tags:['bulk index','10 000 limit','createdBy','30 günlük təmizləmə']}
+    tags:['bulk index','10 000 limit','createdBy','30 günlük təmizləmə']},
+  lab:{eyebrow:'Xətalar · harada tutulur', title:'Hər xəta ən erkən qatda dayanır', text:[
+    'Token problemi JWT filter-də kəsilir, controller-ə heç çatmır. Formatı səhv body @Valid-də kəsilir, service-ə çatmır. Biznes qaydası service-də, eyni anda gələn sorğular isə DB constraint-ində tutulur.',
+    'Hər xəta exception kimi atılır və status koduna çevrilir: 401, 400, 404, 409. Gözlənilməyən heç nə 500 olmamalıdır.',
+    'Kartdakı düyməyə bas: real sorğu gedir, sağda yolun harada dayandığını görürsən.'],
+    tags:['401 filter','400 @Valid','400 service','404 sahiblik','409 unique index']}
 };
 function story(key){
   const s = STORY[key]; if (!s) return;
@@ -464,7 +541,8 @@ async function api(method, path, opts = {}){
   const headers = {}; let body;
   if (opts.json !== undefined){ headers['Content-Type'] = 'application/json'; body = JSON.stringify(opts.json); }
   if (opts.form) body = opts.form;
-  if (state.token && !opts.noAuth) headers['Authorization'] = 'Bearer ' + state.token;
+  const tok = opts.token !== undefined ? opts.token : state.token;
+  if (tok && !opts.noAuth) headers['Authorization'] = 'Bearer ' + tok;
   const t0 = performance.now(); let status = 0, data = null;
   if (!opts.silent) setBusy(1);
   try {
@@ -474,8 +552,8 @@ async function api(method, path, opts = {}){
   } catch(e){ data = 'Network error: ' + e.message; }
   if (!opts.silent) setBusy(-1);
   const res = {ok: status >= 200 && status < 300, status, data, ms: Math.round(performance.now() - t0)};
-  if (!opts.silent) pushLog({method, path, status, ms: res.ms, req: opts.json, data});
-  if (status === 401 && !opts.noAuth && state.token){ ptoast(401, 'Token expired or invalid. Log in again.'); logout(); }
+  if (!opts.silent){ pushLog({method, path, status, ms: res.ms, req: opts.json, data}); journey(method, path, status, data, opts.json, opts.stage); if (!res.ok && status !== 401) shake(); }
+  if (status === 401 && !opts.noAuth && !opts.noLogout && state.token){ ptoast(401, 'Token expired or invalid. Log in again.'); logout(); }
   return res;
 }
 const MEANING = {200:'OK', 201:'Yaradıldı', 202:'Qəbul olundu, arxa planda davam edir', 204:'Silindi, cavab gövdəsi yoxdur', 400:'Yanlış sorğu və ya biznes qaydası pozulub', 401:'Token yoxdur və ya etibarsızdır', 403:'İcazə yoxdur', 404:'Tapılmadı (və ya sənin deyil)', 409:'Konflikt: eyni anda gələn sorğu', 500:'Gözlənilməyən server xətası'};
@@ -745,7 +823,7 @@ $('#file').onchange = () => pick($('#file').files[0]);
 ['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
 drop.addEventListener('drop', e => pick(e.dataTransfer.files[0]));
 const fd = () => { const f = new FormData(); f.append('file', file); return f; };
-function statBlock(t, c, u, f){ return `<div class="stats"><div class="stat"><b>${t ?? 0}</b><span>Rows</span></div><div class="stat"><b style="color:var(--ok)">${c ?? 0}</b><span>New</span></div><div class="stat"><b style="color:var(--blue)">${u ?? 0}</b><span>Updated</span></div><div class="stat"><b style="color:${f ? 'var(--err)' : 'inherit'}">${f ?? 0}</b><span>Failed</span></div></div>`; }
+function statBlock(t, c, u, f){ const n = v => `<b data-to="${v ?? 0}">0</b>`; return `<div class="stats"><div class="stat">${n(t)}<span>Rows</span></div><div class="stat" style="color:var(--ok)">${n(c)}<span>New</span></div><div class="stat" style="color:var(--blue)">${n(u)}<span>Updated</span></div><div class="stat" style="color:${f ? 'var(--err)' : 'inherit'}">${n(f)}<span>Failed</span></div></div>`; }
 function ringSvg(done, ok){
   const c = 2 * Math.PI * 56, col = ok === false ? 'var(--err)' : 'var(--accent)';
   return `<svg width="132" height="132"><circle cx="66" cy="66" r="56" fill="none" stroke="#efe9e2" stroke-width="10"/>
@@ -758,6 +836,7 @@ $('#impSync').onclick = async () => {
   const d = r.data, errs = d.errors || [];
   $('#impResult').innerHTML = `<div class="ring">${ringSvg(true, d.failed ? 'partial' : true)}<div class="lbl">${r.status}<br><span class="hint">${r.ms} ms</span></div></div>` + statBlock(d.totalRows, d.created, d.updated, d.failed) +
     `<div class="errlist">${errs.map(x => `<div><b>Row ${esc(x.row)}</b> · ${esc(x.message)}</div>`).join('')}</div>`;
+  if (!d.failed || d.created + d.updated > 0) setTimeout(confetti, 300);
   loadContacts();
 };
 const noteHtml = (k, h) => `<div class="note ${k}">${h}</div>`;
@@ -766,13 +845,15 @@ $('#impAsync').onclick = async () => {
   if (watcher) watcher.stop();
   const r = await api('POST', '/api/v1/phonebook/import/async', {form: fd()});
   if (!r.ok){ $('#impResult').innerHTML = `<div style="padding:0 16px">${noteHtml('err', `<b>${r.status}</b> · ${esc(errText(r))}`)}</div>`; return; }
-  const id = r.data.resultSetId, t0 = Date.now();
+  const id = r.data.resultSetId, t0 = Date.now(); islandLive(t0);
   ptoast(r.status, 'Accepted. The import keeps going in the background.');
   $('#impResult').innerHTML = `<div class="ring">${ringSvg(false)}<div class="lbl">${r.status}<br><span class="hint" id="impTimer">IN_PROGRESS</span></div></div>
     <div class="channel" id="chan"><i></i><span>connecting…</span></div><p class="hint" style="text-align:center;margin:0 16px 90px;font-family:var(--mono);word-break:break-all">${esc(id)}</p>`;
   const timer = setInterval(() => { const el = $('#impTimer'); if (el) el.textContent = `IN_PROGRESS · ${Math.round((Date.now() - t0) / 1000)}s`; else clearInterval(timer); }, 500);
   watcher = watchResultSet(id, (rs, via) => {
-    clearInterval(timer);
+    clearInterval(timer); islandDone(rs.status === 'COMPLETED');
+    notify(rs.status === 'COMPLETED' ? 'Import completed' : 'Import failed', rs.status === 'COMPLETED' ? `${(rs.createdCount ?? 0).toLocaleString()} new · ${(rs.updatedCount ?? 0).toLocaleString()} updated · ${rs.failedCount ?? 0} failed` : (rs.errorSummary || 'See the result set'));
+    if (rs.status === 'COMPLETED') setTimeout(confetti, 350);
     const okRun = rs.status === 'COMPLETED';
     $('#impResult').innerHTML = `<div class="ring">${ringSvg(true, !okRun ? false : rs.failedCount ? 'partial' : true)}<div class="lbl">${esc(rs.status)}<br><span class="hint">via ${via}</span></div></div>` +
       statBlock(rs.totalRows, rs.createdCount, rs.updatedCount, rs.failedCount) +
@@ -800,7 +881,7 @@ function watchResultSet(id, done){
       pushLog({method:'WS', path:`SUBSCRIBE ${topic}`, status:0, data:'Subscribed over STOMP / SockJS'});
       client.subscribe(topic, msg => {
         let body; try { body = JSON.parse(msg.body); } catch(e){ body = msg.body; }
-        pushLog({method:'WS', path:`MESSAGE ${topic}`, status:0, data: body});
+        pushLog({method:'WS', path:`MESSAGE ${topic}`, status:0, data: body}); journeyWs(topic);
         if (body && body.status) finish(body, 'WebSocket');
       });
       check(true);                        // the import may have finished before we subscribed
@@ -820,13 +901,14 @@ $('#esAdd').onclick = () => es.add();
 function snapMode(){
   $('#esRun').textContent = snap ? 'Narrow' : 'Freeze results';
   $('#esReset').classList.toggle('hidden', !snap);
-  $('#snapCard').innerHTML = snap ? `<div class="snapcard"><small>FROZEN IN ELASTICSEARCH</small><b>${esc(snap.id)}</b><div class="meta"><span>${snap.total} rows</span>${snap.truncated ? '<span>· truncated at 10 000</span>' : ''}<span>· yours only</span></div></div>` :
+  $('#snapCard').innerHTML = snap ? `<div class="snapcard"><span class="ice">❄ FROZEN</span><small>FROZEN IN ELASTICSEARCH</small><b>${esc(snap.id)}</b><div class="meta"><span>${snap.total} rows</span>${snap.truncated ? '<span>· truncated at 10 000</span>' : ''}<span>· yours only</span></div></div>` :
     `<div style="padding:0 16px 10px" class="hint">These conditions run once in PostgreSQL. The matching rows are copied into a new Elasticsearch index.</div>`;
 }
 async function runEs(page = 0){
   const r = await api('POST', `/api/v1/phonebook/es/search?page=${page}&size=15`, {json:{resultSetId: snap ? snap.id : null, criteria: esCriteria}});
   if (!r.ok){ note($('#esMsg'), 'err', `<b>${r.status}</b> · ${esc(errText(r))}`); return; }
   $('#esMsg').innerHTML = ''; const d = r.data;
+  const fresh = !snap;
   if (!snap){
     snap = {id: d.resultSetId, total: d.totalElements, truncated: d.truncated};
     $('#esCrit').innerHTML = ''; es = Builder($('#esCrit'), 'es'); es.add('name', 'MATCH');
@@ -834,37 +916,194 @@ async function runEs(page = 0){
   }
   snapMode();
   $('#esList').innerHTML = resultList(d.content || []) + pager(d.page ?? page, d.totalPages ?? 1, d.totalElements ?? 0);
+  if (fresh){ const l = $('#esList'); l.classList.remove('frost'); void l.offsetWidth; l.classList.add('frost'); setTimeout(() => l.classList.remove('frost'), 1300); }
 }
 $('#esRun').onclick = () => { esCriteria = es.get(); runEs(0); };
 $('#esReset').onclick = () => { snap = null; esCriteria = []; $('#esCrit').innerHTML = ''; es = Builder($('#esCrit'), 'pg'); es.add('city', 'EQUAL'); $('#esList').innerHTML = ''; snapMode(); };
 $('#esList').addEventListener('click', e => { const b = e.target.closest('[data-page]'); if (b && !b.disabled) return runEs(+b.dataset.page); openFromList(e); });
 snapMode();
 
-  /* ---------- cursor, ripple, tilt ---------- */
-  const fine = matchMedia('(hover:hover) and (pointer:fine)').matches, calm = matchMedia('(prefers-reduced-motion:reduce)').matches;
-  const cur = $('#cur'), screen = $('#screen'), phone = $('#phone');
-  if (fine){
-    addEventListener('mousemove', e => {
-      cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px';
-      const onScreen = !!e.target.closest('#screen') && !e.target.closest('input:not([type=date]):not([type=file])');
-      cur.classList.toggle('on', onScreen);
-      if (!calm && innerWidth > 980){
-        const b = phone.getBoundingClientRect(), px = b.left + b.width / 2, py = b.top + b.height / 2;
-        phone.style.transform = `rotateY(${((e.clientX - px) / innerWidth) * 4}deg) rotateX(${-((e.clientY - py) / innerHeight) * 3}deg)`;
-      }
-    });
-    addEventListener('mousedown', () => cur.classList.add('press'));
-    addEventListener('mouseup', () => cur.classList.remove('press'));
-    document.addEventListener('mouseleave', () => cur.classList.remove('on'));
-  } else cur.remove();
-  screen.addEventListener('pointerdown', e => {
-    if (calm) return;
-    const b = screen.getBoundingClientRect(), s = document.createElement('span');
-    s.className = 'ripple'; s.style.left = (e.clientX - b.left) + 'px'; s.style.top = (e.clientY - b.top) + 'px'; s.style.width = s.style.height = '120px';
-    screen.appendChild(s); setTimeout(() => s.remove(), 600);
+/* ---------- cursor, ripple, tilt ---------- */
+const fine = matchMedia('(hover:hover) and (pointer:fine)').matches, calm = matchMedia('(prefers-reduced-motion:reduce)').matches;
+const cur = $('#cur'), screen = $('#screen'), phone = $('#phone');
+if (fine){
+  addEventListener('mousemove', e => {
+    cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px';
+    const onScreen = !!e.target.closest('#screen') && !e.target.closest('input:not([type=date]):not([type=file])');
+    cur.classList.toggle('on', onScreen);
+    if (!calm && innerWidth > 980){
+      const b = phone.getBoundingClientRect(), px = b.left + b.width / 2, py = b.top + b.height / 2;
+      phone.style.transform = `rotateY(${((e.clientX - px) / innerWidth) * 4}deg) rotateX(${-((e.clientY - py) / innerHeight) * 3}deg)`;
+    }
   });
+  addEventListener('mousedown', () => cur.classList.add('press'));
+  addEventListener('mouseup', () => cur.classList.remove('press'));
+  document.addEventListener('mouseleave', () => cur.classList.remove('on'));
+} else cur.remove();
+screen.addEventListener('pointerdown', e => {
+  if (calm) return;
+  const b = screen.getBoundingClientRect(), s = document.createElement('span');
+  s.className = 'ripple'; s.style.left = (e.clientX - b.left) + 'px'; s.style.top = (e.clientY - b.top) + 'px'; s.style.width = s.style.height = '120px';
+  screen.appendChild(s); setTimeout(() => s.remove(), 600);
+});
 
-  /* ---------- start ---------- */
+/* ---------- request journey ---------- */
+const STAGES = ['Telefon','JWT Filter','Controller','Service','DB'];
+let jTimers = [];
+function jClear(){ jTimers.forEach(clearTimeout); jTimers = []; }
+function jNodes(){ return $$('#jtrack .jn'); }
+function jMove(k, ws){ const n = jNodes().at(k), d = $('#jdot'); d.classList.add('on'); d.classList.toggle('ws', !!ws); d.style.left = (n.offsetLeft + n.offsetWidth / 2 - 5.5) + 'px'; }
+function stopStage(path, status, data){
+  if (!status || status === 401 || status === 403) return 1;
+  if (status === 400) return (data && typeof data === 'object' && (data.errors || data.fieldErrors || data.validationErrors)) ? 2 : 3;
+  if (status === 404) return 3;
+  if (status === 409) return path.includes('/es/') ? 3 : 4;
+  return status >= 500 ? 4 : 4;
+}
+function journey(method, path, status, data, req, stage){
+  jClear();
+  const ok = status >= 200 && status < 300, nodes = jNodes(), last = ok ? 4 : (stage && stage[status] != null ? stage[status] : stopStage(path, status, data));
+  nodes.forEach(n => n.className = 'jn');
+  $('#jData').textContent = path.includes('/es/search') ? ((req && !req.resultSetId) ? 'PG → ES' : 'Elastic') : 'PostgreSQL';
+  $('#jPath').textContent = `${method} ${path.split('?')[0].replace('/api/v1','')}`;
+  const msg = $('#jmsg'); msg.className = 'jmsg'; msg.textContent = '…';
+  const step = 170;
+  for (let k = 0; k <= last; k++){
+    jTimers.push(setTimeout(() => {
+      nodes.forEach((n, i) => n.classList.toggle('cur', i === k));
+      if (k > 0) nodes.at(k - 1).classList.add('pass');
+      jMove(k);
+    }, k * step));
+  }
+  jTimers.push(setTimeout(() => {
+    const n = nodes.at(last); n.classList.remove('cur');
+    if (ok){
+      n.classList.add('pass'); msg.className = 'jmsg ok'; msg.textContent = `✓ ${status} · ${MEANING[status] || 'OK'}`;
+      for (let k = last; k >= 0; k--) jTimers.push(setTimeout(() => jMove(k), (last - k) * 90));
+      jTimers.push(setTimeout(() => $('#jdot').classList.remove('on'), (last + 2) * 90));
+    } else {
+      n.classList.add('fail'); msg.className = 'jmsg err';
+      const why = data && typeof data === 'object' && data.message ? ': ' + data.message : '';
+      msg.textContent = `✕ ${status || 'ERR'} · ${STAGES[last]} qatında dayandı${why}`;
+      jTimers.push(setTimeout(() => $('#jdot').classList.remove('on'), 900));
+    }
+  }, (last + 1) * step));
+}
+function journeyWs(topic){
+  jClear();
+  const nodes = jNodes(); nodes.forEach(n => n.className = 'jn');
+  $('#jPath').textContent = 'WS ' + topic.replace('/topic/','');
+  const msg = $('#jmsg'); msg.className = 'jmsg ws'; msg.textContent = '…';
+  [3,2,1,0].forEach((k, i) => jTimers.push(setTimeout(() => { nodes.forEach((n, j) => n.classList.toggle('ws', j >= k && j <= 3)); jMove(k, true); }, i * 180)));
+  jTimers.push(setTimeout(() => { msg.textContent = '⇠ WebSocket · server nəticəni özü göndərdi, telefon heç nə soruşmadı'; }, 4 * 180));
+  jTimers.push(setTimeout(() => $('#jdot').classList.remove('on','ws'), 4 * 180 + 900));
+}
+
+/* ---------- small delights ---------- */
+function shake(){ if (calm) return; phone.animate([{translate:'0 0'},{translate:'-7px 0'},{translate:'7px 0'},{translate:'-4px 0'},{translate:'0 0'}], {duration:320, easing:'ease-out'}); }
+function countAll(root){
+  $$('[data-to]', root).forEach(el => {
+    if (el.dataset.done) return; el.dataset.done = 1;
+    const to = +el.dataset.to || 0, t0 = performance.now(), dur = 900 + Math.min(to, 50000) / 100;
+    const fr = now => { const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3); el.textContent = Math.round(to * e).toLocaleString(); if (p < 1) requestAnimationFrame(fr); };
+    requestAnimationFrame(fr);
+  });
+}
+new MutationObserver(() => countAll($('#impResult'))).observe($('#impResult'), {childList:true, subtree:true});
+function confetti(){
+  if (calm) return;
+  const colors = ['#d9622b','#2f7d4a','#4a6fa5','#e7b34a','#9a5a8a'], w = screen.clientWidth;
+  for (let i = 0; i < 46; i++){
+    const c = document.createElement('span'); c.className = 'confetti';
+    c.style.background = colors[i % colors.length]; c.style.left = (w / 2) + 'px'; c.style.top = '42%';
+    screen.appendChild(c);
+    const dx = (Math.random() - .5) * w * 1.1, dy = -120 - Math.random() * 220, rot = (Math.random() - .5) * 720;
+    c.animate([{transform:'translate(0,0) rotate(0)', opacity:1},{transform:`translate(${dx * .6}px,${dy}px) rotate(${rot / 2}deg)`, opacity:1, offset:.4},{transform:`translate(${dx}px,${dy + 420}px) rotate(${rot}deg)`, opacity:0}],
+      {duration:1500 + Math.random() * 600, easing:'cubic-bezier(.2,.7,.4,1)'}).onfinish = () => c.remove();
+  }
+}
+let pushTimer;
+function notify(title, body){
+  $('#pushTitle').textContent = title; $('#pushBody').textContent = body;
+  const p = $('#push'); p.classList.add('show'); clearTimeout(pushTimer); pushTimer = setTimeout(() => p.classList.remove('show'), 5200);
+}
+$('#push').onclick = () => { $('#push').classList.remove('show'); $$('#tabbar button').find(b => b.dataset.tab === 'import').click(); };
+let liveTimer;
+function islandLive(t0){
+  const isl = $('#island'), it = $('#itext'); clearInterval(liveTimer); isl.classList.add('live');
+  const upd = () => { it.textContent = `⇪ Import · ${Math.round((Date.now() - t0) / 1000)}s`; };
+  upd(); liveTimer = setInterval(upd, 500);
+}
+function islandDone(ok){
+  clearInterval(liveTimer); $('#itext').textContent = ok ? '✓ Import done' : '✕ Import failed';
+  setTimeout(() => $('#island').classList.remove('live'), 1600);
+}
+
+/* ---------- error lab ---------- */
+const rnd = n => Array.from({length:n}, () => Math.floor(Math.random() * 10)).join('');
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c => (c ^ Math.random() * 16 >> c / 4).toString(16)));
+const labNumber = () => '050' + rnd(7);
+const labEntry = num => ({name:'Lab', surname:'Test', nationalId:'AZE' + rnd(8), fin:Math.random().toString(36).slice(2, 9).toUpperCase().padEnd(7, 'X'),
+  dateOfBirth:'1990-05-12', city:'Baku', address:'Nizami 1', number:num, activatedDate:today(), stopDate:null});
+const search = criteria => ({json:{criteria}});
+async function cleanup(...rs){ for (const r of rs) if (r && r.ok && r.data && r.data.id) await api('DELETE', `/api/v1/phonebook/${encodeURIComponent(r.data.id)}`, {silent:true}); }
+const LAB = [
+  {grp:'1 · JWT Filter', title:'Token yoxdur', exp:[401], how:'Authorization header-siz axtarış. Filter tokeni tapmır, SecurityContext boş qalır, Spring Security controller-ə buraxmır.',
+    run: () => api('POST', '/api/v1/phonebook/search?page=0&size=5', {...search([]), noAuth:true, stage:{401:1}})},
+  {grp:'1 · JWT Filter', title:'Saxtalaşdırılmış token', exp:[401], how:'Öz tokeninin sonuna bir simvol əlavə olunur. İmza artıq uyğun gəlmir, <code>validateToken</code> false qaytarır. Payload-ı oxumaq olar, amma secret olmadan dəyişmək olmaz.',
+    run: () => api('POST', '/api/v1/phonebook/search?page=0&size=5', {...search([]), token:(state.token || '') + 'x', noLogout:true, stage:{401:1}})},
+  {grp:'2 · Controller · @Valid', title:'Boş body ilə kontakt', exp:[400], how:'<code>{}</code> göndərilir. DTO-dakı validasiya annotasiyaları controller-ə girişdə işləyir, service heç çağırılmır. Cavabda hansı sahənin niyə səhv olduğu görünür.',
+    run: () => api('POST', '/api/v1/phonebook', {json:{}, stage:{400:2}})},
+  {grp:'3 · Service · biznes qaydası', title:'Eyni aktiv nömrə 2-ci dəfə', exp:[201, 400], how:'Təsadüfi nömrə ilə kontakt yaradılır, sonra eyni nömrə yenidən göndərilir. Service aktiv yazının olub-olmadığını yoxlayır və 400 atır. Sonda test yazısı silinir.',
+    run: async () => { const n = labNumber(); const a = await api('POST', '/api/v1/phonebook', {json:labEntry(n)}); const b = await api('POST', '/api/v1/phonebook', {json:labEntry(n), stage:{400:3}}); await cleanup(a, b); return [a, b]; }},
+  {grp:'3 · Service · Specification', title:'Whitelist-də olmayan sahə', exp:[400], how:'Sahə adı kimi <code>name; DROP TABLE phonebook</code> göndərilir. Sahə adı SQL-ə heç vaxt mətn kimi yapışdırılmır: əvvəl whitelist yoxlanır, yoxdursa 400.',
+    run: () => api('POST', '/api/v1/phonebook/search?page=0&size=5', {...search([{key:'name; DROP TABLE phonebook', operation:'EQUAL', value:'x'}]), stage:{400:3}})},
+  {grp:'3 · Service · Specification', title:'Tarix sahəsinə "abc"', exp:[400], how:'<code>dateOfBirth = abc</code>. Dəyər sahənin real tipinə (LocalDate) çevrilir. Çevrilmə alınmır, 500 yox, aydın mesajlı 400 qayıdır.',
+    run: () => api('POST', '/api/v1/phonebook/search?page=0&size=5', {...search([{key:'dateOfBirth', operation:'EQUAL', value:'abc'}]), stage:{400:3}})},
+  {grp:'3 · Service · Specification', title:'LAST_HOUR tarix sahəsində', exp:[400], how:'<code>dateOfBirth</code> LocalDate-dir, saatı yoxdur. LAST_HOUR yalnız LocalDateTime sahələrində mənalıdır, ona görə tip yoxlanır.',
+    run: () => api('POST', '/api/v1/phonebook/search?page=0&size=5', {...search([{key:'dateOfBirth', operation:'LAST_HOUR', value:null}]), stage:{400:3}})},
+  {grp:'3 · Service · Specification', title:'BETWEEN bir dəyərlə', exp:[400], how:'BETWEEN iki dəyər tələb edir, bir dəyər göndərilir.',
+    run: () => api('POST', '/api/v1/phonebook/search?page=0&size=5', {...search([{key:'dateOfBirth', operation:'BETWEEN', value:['2000-01-01']}]), stage:{400:3}})},
+  {grp:'Xəta deyil · SQL injection', title:"Dəyər: ' OR '1'='1", exp:[200], how:'Klassik injection cəhdi. Dəyər SQL mətninə yapışdırılmır, parametr kimi bind olunur. Ona görə 200 qayıdır, amma 0 nəticə: belə adı olan adam yoxdur.',
+    run: () => api('POST', '/api/v1/phonebook/search?page=0&size=5', search([{key:'name', operation:'EQUAL', value:"' OR '1'='1"}])),
+    extra: r => r.ok && r.data ? `${r.data.totalElements ?? 0} nəticə · dəyər parametr kimi getdi` : ''},
+  {grp:'3 · Service · 404', title:'Olmayan kontaktı silmək', exp:[404], how:'Təsadüfi UUID ilə DELETE. Service yazını tapmır və ResourceNotFoundException atır.',
+    run: () => api('DELETE', `/api/v1/phonebook/${uuid()}`, {stage:{404:3}})},
+  {grp:'3 · Service · sahiblik', title:'Başqasının result set-i', exp:[404], how:'Sorğu <code>findByIdAndCreatedBy(id, sən)</code> ilə gedir. Id başqasınındırsa da, ümumiyyətlə yoxdursa da cavab eynidir: 404. 403 versəydik, id-nin mövcud olduğunu demiş olardıq.',
+    run: () => api('GET', `/api/v1/result-set/${uuid()}`, {stage:{404:3}})},
+  {grp:'3 · Service · Elasticsearch', title:'Snapshot-da çox dərin səhifə', exp:[400], how:'Səhifə 1000 × 15 = 15 000, Elasticsearch-in 10 000 pəncərəsindən kənardır. Service ES-ə getmədən 400 qaytarır. Əvvəl Snapshot tabında nəticəni dondur.',
+    run: async () => { if (!snap) return {info:'Əvvəl Snapshot tabında "Freeze results" et, sonra bura qayıt.'}; return api('POST', '/api/v1/phonebook/es/search?page=1000&size=15', {json:{resultSetId:snap.id, criteria:[]}, stage:{400:3}}); }},
+  {grp:'4 · DB · partial unique index', title:'Eyni nömrə, eyni anda 2 sorğu', exp:[201, 409], how:'Eyni nömrə iki paralel POST ilə göndərilir. İkisi də service yoxlamasını keçə bilər, çünki hələ heç biri yazılmayıb. Birini DB-dəki partial unique index tutur, <code>saveOrConflict</code> onu 409-a çevirir. Lokal maşında bəzən 400 düşür: sorğular ardıcıl çatıb. Yenidən bas.',
+    run: async () => { const n = labNumber(); const rs = await Promise.all([api('POST', '/api/v1/phonebook', {json:labEntry(n), stage:{409:4, 400:3}}), api('POST', '/api/v1/phonebook', {json:labEntry(n), stage:{409:4, 400:3}})]); await cleanup(...rs); return rs.sort((x, y) => x.status - y.status); }},
+  {grp:'Import', title:'Excel olmayan fayl', exp:[], how:'İçində "salam" yazılmış <code>fake.xlsx</code> göndərilir. POI onu workbook kimi aça bilmir. Nəticəyə bax: import çökmür, səbəbini deyir.',
+    run: () => { const f = new FormData(); f.append('file', new File(['salam'], 'fake.xlsx', {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})); return api('POST', '/api/v1/phonebook/import', {form:f}); },
+    extra: r => { const d = r.data || {}; const e = (d.errors || [])[0]; return `${d.failed ?? 0} failed${e ? ' · ' + (e.row != null ? 'Row ' + e.row + ': ' : '') + e.message : ''}`; }}
+];
+function renderLab(){
+  let out = '<p class="labintro">Hər kart real sorğu göndərir. Narıncı nişan gözlənilən status kodudur. Sağ paneldə sorğunun hansı qatda dayandığını izlə.</p>', last = null;
+  LAB.forEach((t, i) => {
+    if (t.grp !== last){ out += `<div class="lgrp">${esc(t.grp)}</div>`; last = t.grp; }
+    out += `<div class="lab" data-i="${i}"><div class="lh"><b>${esc(t.title)}</b>${t.exp.length ? `<span class="exp">${t.exp.join(' + ')}</span>` : ''}</div><p>${t.how}</p><button class="pbtn ghost" type="button">Göstər</button><div class="lout"></div></div>`;
+  });
+  $('#labList').innerHTML = out + '<div style="height:90px"></div>';
+}
+function labLine(r, t){
+  if (r.info) return `<div class="lres"><span class="code warn">i</span><span>${esc(r.info)}</span></div>`;
+  const msg = r.ok ? (t.extra ? t.extra(r) : (r.data && r.data.id ? 'created ' + r.data.id.slice(0, 8) + '…' : MEANING[r.status] || 'OK')) : errText(r);
+  return `<div class="lres"><span class="code ${cls(r.status)}">${r.status || 'ERR'}</span><span>${esc(msg)}<span class="why">${esc(MEANING[r.status] || '')}</span></span></div>`;
+}
+renderLab();
+$('#labList').addEventListener('click', async e => {
+  const btn = e.target.closest('.lab .pbtn'); if (!btn) return;
+  const card = btn.closest('.lab'), t = LAB[+card.dataset.i];
+  btn.disabled = true; btn.textContent = '…'; card.classList.remove('hit', 'miss');
+  let rs = await t.run(); rs = Array.isArray(rs) ? rs : [rs];
+  $('.lout', card).innerHTML = rs.map(r => labLine(r, t)).join('');
+  if (!rs[0].info && t.exp.length){ const got = rs.map(r => r.status); card.classList.add(t.exp.every((c, i) => got[i] === c) ? 'hit' : 'miss'); }
+  btn.disabled = false; btn.textContent = 'Yenidən';
+});
+
+/* ---------- start ---------- */
 if (state.token){ unlock(); } else story('login');
 })();
 </script>
