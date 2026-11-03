@@ -6,9 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface PhonebookResultSetRepository extends JpaRepository<PhonebookResultSet, UUID> {
 
     List<PhonebookResultSet> findByTypeEqualsAndExpirationTimeIsBefore(ResultSetType type,LocalDateTime time);
+    Optional<PhonebookResultSet> findByIdAndCreatedBy(UUID id, String createdBy);
 }

@@ -6,6 +6,7 @@ import com.floop.phonebook.exception.ResourceNotFoundException;
 import com.floop.phonebook.mapper.PhonebookMapper;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
 import com.floop.phonebook.service.PhonebookResultSetService;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -23,8 +24,9 @@ public class PhonebookResultSetServiceImpl implements PhonebookResultSetService 
 
     @Override
     public ResultSetResponse getById(UUID id) {
-        PhonebookResultSet resultSet = phonebookResultSetRepository.findById(id).orElseThrow(
-                () ->  new ResourceNotFoundException("Result set not found: " + id));
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        PhonebookResultSet resultSet = phonebookResultSetRepository.findByIdAndCreatedBy(id, username)
+                .orElseThrow(() -> new ResourceNotFoundException("Result set not found: " + id));
         return mapper.toResultSetResponse(resultSet);
     }
 }

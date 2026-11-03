@@ -37,6 +37,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -256,8 +257,9 @@ public class EsServiceImpl implements EsService {
 
 
     private PhonebookResultSet loadUsableResultSet(UUID id){
-        PhonebookResultSet resultSet = resultSetRepository.findById(id)
-                .orElseThrow(() ->  new ResourceNotFoundException("Result set not found: " + id));
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        PhonebookResultSet resultSet = resultSetRepository.findByIdAndCreatedBy(id, username)
+                .orElseThrow(() -> new ResourceNotFoundException("Result set not found: " + id));
 
         if (resultSet.getType()!=ResultSetType.SEARCH){
             throw new BadRequestException("Result set " + id + " is not a search result set");

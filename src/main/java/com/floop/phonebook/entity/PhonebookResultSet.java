@@ -6,12 +6,15 @@ import com.floop.phonebook.enums.ResultSetType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "phonebook_result_set")
 @Getter
 @Setter
@@ -21,6 +24,10 @@ public class PhonebookResultSet {
     @Id
     @GeneratedValue
     private UUID id;
+
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private String createdBy;
 
     @Column(name = "type")
     @Enumerated(EnumType.STRING)
@@ -44,7 +51,7 @@ public class PhonebookResultSet {
     private String criteriaJson; //axtarisda ishledilmir yalniz qeyd ucun.Neyin sureti oldugunu anlamaq meqsedile
 
     @Column(name = "expiration_time")
-    private LocalDateTime expirationTime; //scheduler ucun.Snapshotun omrunun sonu
+    private LocalDateTime expirationTime;
 
     @Column(name = "updated_count")
     private int updatedCount;

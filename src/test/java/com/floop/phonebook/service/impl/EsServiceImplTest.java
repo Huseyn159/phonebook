@@ -14,11 +14,14 @@ import com.floop.phonebook.repository.PhonebookRepository;
 import com.floop.phonebook.repository.PhonebookResultSetRepository;
 import com.floop.phonebook.search.EsQueryBuilder;
 import com.floop.phonebook.search.PhonebookSpecificationBuilder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -49,6 +52,17 @@ class EsServiceImplTest {
                 resultSetRepository,objectMapper,30,esQueryBuilder);
     }
 
+    @BeforeEach
+    void auth() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("ali", null));
+    }
+
+    @AfterEach
+    void clearAuth() {
+        SecurityContextHolder.clearContext();
+    }
+
     private EsSearchRequest requestFor(UUID id){
         EsSearchRequest request = new EsSearchRequest();
         request.setResultSetId(id);
@@ -69,8 +83,7 @@ class EsServiceImplTest {
         UUID id = UUID.randomUUID();
         PhonebookResultSet rs = usableResultSet();
         rs.setType(ResultSetType.IMPORT);
-        when(resultSetRepository.findById(id)).thenReturn(Optional.of(rs));
-
+        when(resultSetRepository.findByIdAndCreatedBy(id, "ali")).thenReturn(Optional.of(rs));
 
         assertThatThrownBy(()->esService.esProcess(requestFor(id),0,10))
                 .isInstanceOf(BadRequestException.class)
@@ -93,7 +106,7 @@ class EsServiceImplTest {
         PhonebookResultSet rs = usableResultSet();
         rs.setExpirationTime(LocalDateTime.now().minusDays(1));
 
-        when(resultSetRepository.findById(id)).thenReturn(Optional.of(rs));
+        when(resultSetRepository.findByIdAndCreatedBy(id, "ali")).thenReturn(Optional.of(rs));
 
         assertThatThrownBy(()->esService.esProcess(requestFor(id),0,10))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -106,7 +119,7 @@ class EsServiceImplTest {
         UUID id = UUID.randomUUID();
         PhonebookResultSet rs = usableResultSet();
         rs.setStatus(ResultSetStatus.IN_PROGRESS);
-        when(resultSetRepository.findById(id)).thenReturn(Optional.of(rs));
+        when(resultSetRepository.findByIdAndCreatedBy(id, "ali")).thenReturn(Optional.of(rs));
 
         assertThatThrownBy(()->esService.esProcess(requestFor(id),0,10))
                 .isInstanceOf(ConflictException.class)
@@ -123,6 +136,16 @@ class EsServiceImplTest {
 
         verifyNoInteractions(resultSetRepository);
 
+    }
+
+    @Test
+    void esProcess_whenResultSetBelongsToAnotherUser_throwsResourceNotFound() {
+        UUID id = UUID.randomUUID();
+        when(resultSetRepository.findByIdAndCreatedBy(id, "ali")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> esService.esProcess(requestFor(id), 0, 10))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Result set not found: " + id);
     }
 
 

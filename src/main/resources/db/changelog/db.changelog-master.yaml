@@ -232,3 +232,14 @@ databaseChangeLog:
                   defaultValueBoolean: false
                   constraints:
                     nullable: false
+
+  - changeSet:
+      id: 10
+      author: huseyn
+      changes:
+        - addColumn:
+            tableName: phonebook_result_set
+            columns:
+              - column:
+                  name: created_by
+                  type: varchar(255)
